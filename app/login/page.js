@@ -11,7 +11,7 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validUsers.includes(username)) {
-      document.cookie = `currentUser=${username}; path=/`;
+      document.cookie = `currentUser=${username}; path=/; max-age=86400; SameSite=Lax`;
       localStorage.setItem('currentUser', username);
       router.push('/');
     } else {

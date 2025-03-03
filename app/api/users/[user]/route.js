@@ -28,6 +28,9 @@ export async function POST(request, { params }) {
 }
 
 export async function GET(request, { params }) {
+    if (!user || !['a1', 'a2', 'a3', 'a4'].includes(user)) {
+        return Response.json({ error: 'Invalid user' }, { status: 400 });
+      }
   const { user } = params;
   const { blobs } = await list({ prefix: `users/${user}.json` });
 

@@ -67,8 +67,8 @@ export default function Home() {
         <button
           onClick={() => {
             localStorage.removeItem('currentUser');
-            document.cookie = 'currentUser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            router.push('/login');
+document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+router.push('/login');
           }}
           className="text-blue-500 hover:text-blue-600"
         >
