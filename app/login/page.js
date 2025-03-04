@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Login() {
@@ -8,15 +8,31 @@ export default function Login() {
   const router = useRouter();
   const validUsers = ['a1', 'a2', 'a3', 'a4'];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validUsers.includes(username)) {
-      // Set cookie with proper domain and SameSite
-      document.cookie = `currentUser=${username}; path=/; max-age=86400; SameSite=Lax`;
-      // Force full page reload to update middleware
-      window.location.href = '/';
-    } else {
+    if (!validUsers.includes(username)) {
       setError('No user found with that name');
+      return;
+    }
+
+    try {
+      // Create initial user data file in Blob
+      const response = await fetch(`/api/users/${username}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initial: true })
+      });
+
+      if (!response.ok) throw new Error('Failed to initialize user');
+
+      // Set cookie with SameSite and Secure flags
+      document.cookie = `currentUser=${username}; path=/; max-age=86400; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+      
+      // Force full reload to ensure middleware picks up the cookie
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Failed to initialize user account');
     }
   };
 
