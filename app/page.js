@@ -10,6 +10,7 @@ export default function Home() {
   const [meals, setMeals] = useState({});
   const [history, setHistory] = useState([]);
   const [currentUser, setCurrentUser] = useState('');
+  const [loading, setLoading] = useState(true);
   
   const activityConfig = {
     wakeUp: { time: '7:00 AM', meal: false },
@@ -19,22 +20,28 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const userCookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('currentUser='))
-      ?.split('=')[1];
-      
-    if (!userCookie) {
-      router.push('/login');
-    } else {
-      setCurrentUser(userCookie);
-      loadUserData(userCookie);
-    }
+    const checkAuth = () => {
+      const userCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('currentUser='))
+        ?.split('=')[1];
+
+      if (!userCookie) {
+        router.push('/login');
+      } else {
+        setCurrentUser(userCookie);
+        loadUserData(userCookie);
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, [router]);
 
   const loadUserData = async (user) => {
     try {
       const res = await fetch(`/api/users/${user}`);
+      if (!res.ok) throw new Error('Failed to fetch data');
       const data = await res.json();
       setHistory(data.history || []);
     } catch (error) {
@@ -58,17 +65,26 @@ export default function Home() {
         meals
       };
 
-      await fetch(`/api/users/${currentUser}`, {
+      const response = await fetch(`/api/users/${currentUser}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry)
       });
-      
+
+      if (!response.ok) throw new Error('Submission failed');
       loadUserData(currentUser);
     } catch (error) {
       console.error('Submission error:', error);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
@@ -79,8 +95,7 @@ export default function Home() {
         <button
           onClick={() => {
             document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-            router.push('/login');
-            router.refresh();
+            window.location.href = '/login';
           }}
           className="text-blue-500 hover:text-blue-600"
         >
@@ -114,11 +129,24 @@ export default function Home() {
                 />
 
                 {config.meal && (
-                  <MealDetailsInput
-                    mealType={key}
-                    value={meals[key] || ''}
-                    onChange={(value) => setMeals(prev => ({...prev, [key]: value}))}
-                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <span className="mr-1">Allowed foods:</span>
+                      <button
+                        title={getAllowedFoods(key).join(', ')}
+                        className="text-blue-500 hover:text-blue-600"
+                      >
+                        ℹ️
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="What did you eat?"
+                      value={meals[key] || ''}
+                      onChange={(e) => setMeals(prev => ({...prev, [key]: e.target.value}))}
+                      className="w-full p-2 border rounded-md"
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -160,31 +188,11 @@ export default function Home() {
   );
 }
 
-function MealDetailsInput({ mealType, value, onChange }) {
+function getAllowedFoods(mealType) {
   const allowedFoods = {
     breakfast: ['Oatmeal', 'Eggs', 'Yogurt'],
     lunch: ['Salad', 'Chicken', 'Rice'],
     dinner: ['Fish', 'Vegetables', 'Quinoa']
   };
-
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center text-sm text-gray-600">
-        <span className="mr-1">Allowed foods:</span>
-        <button
-          title={allowedFoods[mealType].join(', ')}
-          className="text-blue-500 hover:text-blue-600"
-        >
-          ℹ️
-        </button>
-      </div>
-      <input
-        type="text"
-        placeholder="What did you eat?"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full p-2 border rounded-md"
-      />
-    </div>
-  );
+  return allowedFoods[mealType] || [];
 }

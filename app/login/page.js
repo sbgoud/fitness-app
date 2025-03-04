@@ -8,19 +8,13 @@ export default function Login() {
   const router = useRouter();
   const validUsers = ['a1', 'a2', 'a3', 'a4'];
 
-  useEffect(() => {
-    const userCookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('currentUser='));
-    if (userCookie) router.push('/');
-  }, [router]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validUsers.includes(username)) {
+      // Set cookie with proper domain and SameSite
       document.cookie = `currentUser=${username}; path=/; max-age=86400; SameSite=Lax`;
-      router.push('/');
-      router.refresh();
+      // Force full page reload to update middleware
+      window.location.href = '/';
     } else {
       setError('No user found with that name');
     }
