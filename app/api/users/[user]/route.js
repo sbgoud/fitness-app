@@ -12,20 +12,6 @@ export async function POST(request, { params }) {
     const { blobs } = await list({ prefix: `users/${user}.json` });
     let history = [];
     
-    // Initialize new user data if first time
-    if (body.initial) {
-      if (blobs.length > 0) return Response.json({ success: true });
-      
-      await put(`users/${user}.json`, JSON.stringify({ history: [] }), {
-        contentType: 'application/json',
-        access: 'public',
-        addRandomSuffix: false
-      });
-      
-      return Response.json({ success: true });
-    }
-
-    // Existing data handling
     if (blobs.length > 0) {
       const currentData = await fetch(blobs[0].url).then(r => r.json());
       history = currentData.history.filter(entry => 
