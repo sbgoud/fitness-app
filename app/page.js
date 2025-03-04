@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { Accordion } from '@headlessui/react';
 
 export default function Home() {
   const router = useRouter();
@@ -20,18 +19,27 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const user = localStorage.getItem('currentUser');
-    if (!user) router.push('/login');
-    else {
-      setCurrentUser(user);
-      loadUserData(user);
+    const userCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('currentUser='))
+      ?.split('=')[1];
+      
+    if (!userCookie) {
+      router.push('/login');
+    } else {
+      setCurrentUser(userCookie);
+      loadUserData(userCookie);
     }
-  }, []);
+  }, [router]);
 
   const loadUserData = async (user) => {
-    const res = await fetch(`/api/users/${user}`);
-    const data = await res.json();
-    setHistory(data.history || []);
+    try {
+      const res = await fetch(`/api/users/${user}`);
+      const data = await res.json();
+      setHistory(data.history || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
   };
 
   const handleActivityChange = (activity) => {
@@ -42,20 +50,24 @@ export default function Home() {
   };
 
   const handleSubmit = async () => {
-    const entry = {
-      date: new Date().toISOString(),
-      activities,
-      notes,
-      meals
-    };
+    try {
+      const entry = {
+        date: new Date().toISOString(),
+        activities,
+        notes,
+        meals
+      };
 
-    await fetch(`/api/users/${currentUser}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry)
-    });
-    
-    loadUserData(currentUser);
+      await fetch(`/api/users/${currentUser}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+      
+      loadUserData(currentUser);
+    } catch (error) {
+      console.error('Submission error:', error);
+    }
   };
 
   return (
@@ -66,9 +78,9 @@ export default function Home() {
         <h1 className="text-xl font-bold">Fitness Schedule</h1>
         <button
           onClick={() => {
-            localStorage.removeItem('currentUser');
-document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-router.push('/login');
+            document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            router.push('/login');
+            router.refresh();
           }}
           className="text-blue-500 hover:text-blue-600"
         >
@@ -124,29 +136,25 @@ router.push('/login');
       {/* History */}
       <div className="mt-8">
         <h2 className="text-lg font-bold mb-4">Previous Days</h2>
-        <Accordion as="div" className="space-y-2">
+        <div className="space-y-2">
           {history.map((entry, index) => (
-            <Accordion.Item key={index}>
-              {({ open }) => (
-                <>
-                  <Accordion.Button className="w-full p-2 bg-gray-100 rounded-md flex justify-between items-center">
-                    <span>
-                      {format(parseISO(entry.date), 'MMM dd, yyyy')}
-                    </span>
-                    <span className={`transform transition-transform ${open ? 'rotate-180' : ''}`}>
-                      ▼
-                    </span>
-                  </Accordion.Button>
-                  <Accordion.Panel className="p-4 bg-white rounded-b-md shadow">
-                    <pre className="whitespace-pre-wrap">
-                      {JSON.stringify(entry, null, 2)}
-                    </pre>
-                  </Accordion.Panel>
-                </>
-              )}
-            </Accordion.Item>
+            <div key={index} className="border rounded-md">
+              <details className="group">
+                <summary className="flex justify-between items-center p-2 bg-gray-100 cursor-pointer">
+                  <span>{format(parseISO(entry.date), 'MMM dd, yyyy')}</span>
+                  <span className="transform transition-transform group-open:rotate-180">
+                    ▼
+                  </span>
+                </summary>
+                <div className="p-4 bg-white">
+                  <pre className="whitespace-pre-wrap">
+                    {JSON.stringify(entry, null, 2)}
+                  </pre>
+                </div>
+              </details>
+            </div>
           ))}
-        </Accordion>
+        </div>
       </div>
     </div>
   );

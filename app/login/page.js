@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Login() {
@@ -8,12 +8,19 @@ export default function Login() {
   const router = useRouter();
   const validUsers = ['a1', 'a2', 'a3', 'a4'];
 
+  useEffect(() => {
+    const userCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('currentUser='));
+    if (userCookie) router.push('/');
+  }, [router]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validUsers.includes(username)) {
       document.cookie = `currentUser=${username}; path=/; max-age=86400; SameSite=Lax`;
-      localStorage.setItem('currentUser', username);
       router.push('/');
+      router.refresh();
     } else {
       setError('No user found with that name');
     }

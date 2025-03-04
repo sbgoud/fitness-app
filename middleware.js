@@ -2,14 +2,16 @@ import { NextResponse } from 'next/server';
 
 export function middleware(request) {
   const currentUser = request.cookies.get('currentUser')?.value;
-  const { pathname } = request.nextUrl;
+  const url = request.nextUrl.clone();
 
-  if (!currentUser && pathname !== '/login') {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (!currentUser && url.pathname !== '/login') {
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
   }
 
-  if (currentUser && pathname === '/login') {
-    return NextResponse.redirect(new URL('/', request.url));
+  if (currentUser && url.pathname === '/login') {
+    url.pathname = '/';
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
