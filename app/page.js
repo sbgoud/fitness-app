@@ -113,8 +113,55 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Keep all previous useEffect and data loading logic
-  
+  useEffect(() => {
+    const userCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('currentUser='))
+      ?.split('=')[1];
+
+    if (!userCookie) {
+      router.push('/login');
+    } else {
+      setCurrentUser(userCookie);
+      loadUserData(userCookie);
+    }
+  }, [router]);
+
+  const loadUserData = async (user) => {
+    try {
+      const res = await fetch(`/api/users/${user}`);
+      if (!res.ok) throw new Error('Failed to fetch data');
+      const data = await res.json();
+      
+      const safeHistory = Array.isArray(data?.history) ? data.history : [];
+      setHistory(safeHistory);
+
+      const todayEntry = safeHistory.find(entry => 
+        isSameDay(new Date(entry.date), new Date())
+      );
+
+      if (todayEntry) {
+        const updatedEntries = entries.map(entry => {
+          const savedEntry = todayEntry.schedule.find(e => e.time === entry.time);
+          return savedEntry ? { 
+            ...entry,
+            checked: savedEntry.checked || false,
+            timestamp: savedEntry.timestamp || null,
+            notes: savedEntry.notes || ''
+          } : entry;
+        });
+        setEntries(updatedEntries);
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setEntries([...fitnessSchedule]);
+      setHistory([]);
+      setLoading(false);
+    }
+  };
+
   const handleCheckboxChange = (index) => {
     const newEntries = [...entries];
     newEntries[index].checked = !newEntries[index].checked;
@@ -128,6 +175,36 @@ export default function Home() {
     setEntries(newEntries);
   };
 
+  const handleSubmit = async () => {
+    try {
+      const entry = {
+        date: new Date().toISOString(),
+        schedule: entries.map(item => ({
+          time: item.time,
+          activity: item.activity,
+          diet: item.diet,
+          checked: item.checked,
+          timestamp: item.timestamp,
+          notes: item.notes
+        }))
+      };
+
+      const response = await fetch(`/api/users/${currentUser}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+
+      if (!response.ok) throw new Error('Save failed');
+      
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      loadUserData(currentUser);
+    } catch (error) {
+      console.error('Submission error:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -139,10 +216,10 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="flex justify-between items-center mb-8 p-4 bg-white rounded-lg shadow-sm">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 p-6 bg-white rounded-lg shadow-md">
           <div className="flex items-center space-x-4">
-            <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800">
+            <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800 text-sm">
               {currentUser}
             </span>
             <h1 className="text-2xl font-bold text-gray-800">
@@ -188,7 +265,7 @@ export default function Home() {
               {entries.map((item, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                   <td className="p-4 text-center">
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center space-y-1">
                       <input
                         type="checkbox"
                         checked={item.checked}
@@ -196,7 +273,7 @@ export default function Home() {
                         className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
                       />
                       {item.timestamp && (
-                        <span className="text-xs text-gray-500 mt-1">
+                        <span className="text-xs text-gray-500">
                           {format(new Date(item.timestamp), 'hh:mm a')}
                         </span>
                       )}
@@ -204,14 +281,12 @@ export default function Home() {
                   </td>
                   <td className="p-4 font-medium text-gray-700">{item.time}</td>
                   <td className="p-4 text-gray-600">{item.activity}</td>
-                  <td className="p-4 text-gray-600 whitespace-pre-line">
-                    {item.diet}
-                  </td>
+                  <td className="p-4 text-gray-600 whitespace-pre-line">{item.diet}</td>
                   <td className="p-4">
                     <textarea
                       value={item.notes}
                       onChange={(e) => handleNotesChange(index, e.target.value)}
-                      className="w-full h-20 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full h-20 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       placeholder={item.activity === 'Weight Check' ? 'Enter today\'s weight' : 'Add notes...'}
                     />
                   </td>
@@ -225,21 +300,21 @@ export default function Home() {
         <div className="mt-8 bg-blue-50 rounded-xl p-6 shadow-sm border border-blue-100">
           <h3 className="text-lg font-semibold text-blue-800 mb-4">Health Protocol</h3>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-blue-700">
-            <li className="flex items-center">
-              <span className="mr-2">🚰</span>
-              Drink 3L Water with Chia seeds/Sabja Ginjalu daily
+            <li className="flex items-center space-x-2">
+              <span>🚰</span>
+              <span>Drink 3L Water with Chia seeds/Sabja Ginjalu daily</span>
             </li>
-            <li className="flex items-center">
-              <span className="mr-2">📵</span>
-              No mobile usage after 9PM
+            <li className="flex items-center space-x-2">
+              <span>📵</span>
+              <span>No mobile usage after 9PM</span>
             </li>
-            <li className="flex items-center">
-              <span className="mr-2">⏰</span>
-              Maintain 10PM bedtime consistently
+            <li className="flex items-center space-x-2">
+              <span>⏰</span>
+              <span>Maintain 10PM bedtime consistently</span>
             </li>
-            <li className="flex items-center">
-              <span className="mr-2">👩🍳</span>
-              Prepare all meals independently
+            <li className="flex items-center space-x-2">
+              <span>👩🍳</span>
+              <span>Prepare all meals independently</span>
             </li>
           </ul>
         </div>
@@ -261,7 +336,7 @@ export default function Home() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                d="M5 13l4 4L19 7"
               />
             </svg>
           </button>
@@ -279,19 +354,7 @@ export default function Home() {
                       {format(parseISO(entry.date), 'MMMM do, yyyy')}
                     </span>
                     <span className="transform transition-transform group-open:-rotate-180 text-gray-500">
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
+                      ▼
                     </span>
                   </summary>
                   <div className="p-6">
@@ -329,5 +392,13 @@ export default function Home() {
         </div>
       </div>
     </div>
+  );
+}
+
+function isSameDay(d1, d2) {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
   );
 }
