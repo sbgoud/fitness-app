@@ -4,7 +4,7 @@ export async function POST(request, { params }) {
   const { user } = params;
   const body = await request.json();
 
-  if (!['a1', 'a2', 'a3', 'a4'].includes(user)) {
+  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33'].includes(user)) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
 

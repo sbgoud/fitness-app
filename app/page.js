@@ -224,7 +224,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8 p-6 bg-blue-50 rounded-lg shadow-md border border-blue-100">
           <div className="flex items-center space-x-4">
             <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800 text-sm">
-              {currentUser}
+              {currentUser.slice(0, -4)}
             </span>
             <h1 className="text-2xl font-bold text-blue-800">
               {format(new Date(), 'EEEE, MMMM do')} Schedule
