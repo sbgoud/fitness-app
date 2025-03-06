@@ -129,42 +129,36 @@ export default function Home() {
     }
   }, [router]);
 
-  const loadUserData = async (user) => {
-    try {
-      const res = await fetch(`/api/users/${user}`);
-      if (!res.ok) throw new Error('Failed to fetch data');
-      const data = await res.json();
-      
-      const safeHistory = Array.isArray(data?.history) ? data.history : [];
-      
-      // Separate today's entry from history
-      const todayEntry = safeHistory.find(entry => 
-        isSameDay(new Date(entry.date), new Date())
-      );
-      
-      // Filter out today's entry from history display
-      const filteredHistory = safeHistory.filter(entry => 
-        !isSameDay(new Date(entry.date), new Date())
-      );
-      setHistory(filteredHistory);
+ // Update the loadUserData function:
+const loadUserData = async (user) => {
+  try {
+    const res = await fetch(`/api/users/${user}`);
+    if (!res.ok) throw new Error('Failed to fetch data');
+    const data = await res.json();
+    
+    const safeHistory = Array.isArray(data?.history) ? data.history : [];
+    const todayEntry = safeHistory.find(entry => 
+      isSameDay(new Date(entry.date), new Date())
+    );
 
-      // Update form with today's entry if exists
-      if (todayEntry) {
-        const updatedEntries = entries.map(entry => {
-          const savedEntry = todayEntry.schedule.find(e => e.time === entry.time);
-          return savedEntry ? { ...entry, ...savedEntry } : entry;
-        });
-        setEntries(updatedEntries);
-      }
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setEntries([...fitnessSchedule]);
-      setHistory([]);
-      setLoading(false);
-    }
-  };
+    // Merge existing data properly
+    setEntries(prev => prev.map(defaultEntry => {
+      const savedEntry = todayEntry?.schedule?.find(e => 
+        e.time === defaultEntry.time && 
+        e.activity === defaultEntry.activity
+      );
+      return savedEntry ? { ...defaultEntry, ...savedEntry } : defaultEntry;
+    }));
+
+    setHistory(safeHistory.filter(entry => 
+      !isSameDay(new Date(entry.date), new Date())
+    ));
+    setLoading(false);
+  } catch (error) {
+    console.error('Error loading data:', error);
+    setLoading(false);
+  }
+};
 
   const handleCheckboxChange = (index) => {
     const newEntries = [...entries];
