@@ -300,6 +300,56 @@ export default function Home() {
           </table>
         </div>
 
+
+
+
+     {/* Save Button */}
+ <div className="mt-8 flex justify-end">
+          <button
+            onClick={handleSubmit}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-lg transition-colors flex items-center shadow-md hover:shadow-lg"
+          >
+            <span>Save Daily Progress</span>
+            <svg
+              className="ml-2 w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </button>
+        </div>
+
+
+     {/* Health Protocol */}
+     <div className="mt-8 bg-blue-50 rounded-xl p-6 shadow-sm border border-blue-100">
+          <h3 className="text-lg font-semibold text-blue-800 mb-4">Health Protocol</h3>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-blue-700">
+            <li className="flex items-center space-x-2">
+              <span>🚰</span>
+              <span>Drink 3L Water with Chia seeds/Sabja Ginjalu daily</span>
+            </li>
+            <li className="flex items-center space-x-2">
+              <span>📵</span>
+              <span>No mobile usage after 9PM</span>
+            </li>
+            <li className="flex items-center space-x-2">
+              <span>⏰</span>
+              <span>Maintain 10PM bedtime consistently</span>
+            </li>
+            <li className="flex items-center space-x-2">
+              <span>👩🍳</span>
+              <span>Prepare all meals independently</span>
+            </li>
+          </ul>
+        </div>    
+
         {/* Previous Entries */}
         <div className="mt-12">
           <h2 className="text-xl font-semibold text-blue-800 mb-6">Previous Entries</h2>
