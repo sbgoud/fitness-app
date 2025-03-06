@@ -4,7 +4,7 @@ export async function POST(request, { params }) {
   const { user } = params;
   const body = await request.json();
 
-  if (!['a1', 'a2', 'a3', 'a4'].includes(user)) {
+  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33'].includes(user)) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
 
@@ -12,25 +12,13 @@ export async function POST(request, { params }) {
     const { blobs } = await list({ prefix: `users/${user}.json` });
     let history = [];
     
-    // Initialize new user data if first time
-    if (body.initial) {
-      if (blobs.length > 0) return Response.json({ success: true });
-      
-      await put(`users/${user}.json`, JSON.stringify({ history: [] }), {
-        contentType: 'application/json',
-        access: 'public',
-        addRandomSuffix: false
-      });
-      
-      return Response.json({ success: true });
-    }
-
-    // Existing data handling
     if (blobs.length > 0) {
       const currentData = await fetch(blobs[0].url).then(r => r.json());
-      history = currentData.history.filter(entry => 
-        !isSameDay(new Date(entry.date), new Date(body.date))
-      );
+      history = Array.isArray(currentData.history) 
+        ? currentData.history.filter(entry => 
+            !isSameDay(new Date(entry.date), new Date(body.date))
+          )
+        : [];
     }
 
     const updatedData = {
@@ -54,7 +42,7 @@ export async function GET(request, { params }) {
   const { user } = params;
 
   if (!['a1', 'a2', 'a3', 'a4'].includes(user)) {
-    return Response.json({ error: 'Invalid user' }, { status: 400 });
+    return Response.json({ history: [] });
   }
 
   try {
@@ -62,15 +50,19 @@ export async function GET(request, { params }) {
     if (blobs.length === 0) return Response.json({ history: [] });
     
     const data = await fetch(blobs[0].url).then(r => r.json());
-    return Response.json(data);
+    return Response.json({
+      history: Array.isArray(data.history) ? data.history : []
+    });
   } catch (error) {
     console.error('Blob fetch error:', error);
-    return Response.json({ error: 'Server error' }, { status: 500 });
+    return Response.json({ history: [] });
   }
 }
 
 function isSameDay(d1, d2) {
-  return d1.getFullYear() === d2.getFullYear() &&
-         d1.getMonth() === d2.getMonth() &&
-         d1.getDate() === d2.getDate();
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
 }

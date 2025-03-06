@@ -3,39 +3,130 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 
+
+
+const fitnessSchedule = [
+  {
+    time: '5:00 AM',
+    activity: 'Wake up',
+    diet: 'Lemon water + Honey',
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '5:30 AM',
+    activity: 'Morning drink',
+    diet: 'Black Jeera Water Green Tea or Lemon Tea',
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '6:00 AM - 7:00 AM',
+    activity: 'Exercise',
+    diet: 'Munaga aaku Water + Lemon + Honey',
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: 'Before 8:00 AM',
+    activity: 'Breakfast',
+    diet: `Oats
+Raagi Jaava Doolid Rawa Upma
+Soaked Dry fruits (4 Badam + 2 Kaju + 4 Pista + 2 Walnuts + 1 Anjeer + 4 Raisins)
+Sprouts
+Boiled Eggs
+Seasonal Fruits/Vegetable Salad (Keera/Carrot/Beetroot)
+Idli/Dosa without oil (Avoid rice based)`,
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '11:00 AM',
+    activity: 'Morning Snack',
+    diet: 'Fresh fruit or juice (Banana, Orange, Carrot, Cucumber, Avocado)',
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '1:00 PM - 2:00 PM',
+    activity: 'Lunch',
+    diet: `1-2 Pulkas/Whole Wheat/Brown Rice
+Vegetable Curry + Dal
+Curd (Small bowl)
+Non-Veg Options: Chicken, Fish, Eggs`,
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '5:00 PM',
+    activity: 'Evening Snack',
+    diet: 'Pumpkin Seeds, Roasted Chana, Watermelon Seeds',
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '8:00 PM - 9:00 PM',
+    activity: 'Dinner',
+    diet: `1-2 Pulkas with Vegetable Curry
+Multigrain Jaava Sprouts/Papaya
+Non-Veg Options: Chicken, Fish, Eggs`,
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '9:00 PM - 9:30 PM',
+    activity: 'Walking',
+    diet: 'Oats, Vegetable Salad',
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '9:30 PM - 10:00 PM',
+    activity: 'Wind Down',
+    diet: 'Prepare for next day diet & Sleep',
+    checked: false,
+    timestamp: null,
+    notes: ''
+  },
+  {
+    time: '10:00 PM',
+    activity: 'Weight Check',
+    diet: '',
+    checked: false,
+    timestamp: null,
+    notes: 'Enter today\'s weight'
+  }
+];
+
 export default function Home() {
   const router = useRouter();
-  const [activities, setActivities] = useState({});
-  const [notes, setNotes] = useState({});
-  const [meals, setMeals] = useState({});
+  const [entries, setEntries] = useState([...fitnessSchedule]);
   const [history, setHistory] = useState([]);
   const [currentUser, setCurrentUser] = useState('');
   const [loading, setLoading] = useState(true);
-  
-  const activityConfig = {
-    wakeUp: { time: '7:00 AM', meal: false },
-    breakfast: { time: '8:00 AM', meal: true },
-    lunch: { time: '12:30 PM', meal: true },
-    dinner: { time: '7:30 PM', meal: true }
-  };
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const userCookie = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('currentUser='))
-        ?.split('=')[1];
+    const userCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('currentUser='))
+      ?.split('=')[1];
 
-      if (!userCookie) {
-        router.push('/login');
-      } else {
-        setCurrentUser(userCookie);
-        loadUserData(userCookie);
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
+    if (!userCookie) {
+      router.push('/login');
+    } else {
+      setCurrentUser(userCookie);
+      loadUserData(userCookie);
+    }
   }, [router]);
 
   const loadUserData = async (user) => {
@@ -43,26 +134,63 @@ export default function Home() {
       const res = await fetch(`/api/users/${user}`);
       if (!res.ok) throw new Error('Failed to fetch data');
       const data = await res.json();
-      setHistory(data.history || []);
+      
+      const safeHistory = Array.isArray(data?.history) ? data.history : [];
+      
+      // Separate today's entry from history
+      const todayEntry = safeHistory.find(entry => 
+        isSameDay(new Date(entry.date), new Date())
+      );
+      
+      // Filter out today's entry from history display
+      const filteredHistory = safeHistory.filter(entry => 
+        !isSameDay(new Date(entry.date), new Date())
+      );
+      setHistory(filteredHistory);
+
+      // Update form with today's entry if exists
+      if (todayEntry) {
+        const updatedEntries = entries.map(entry => {
+          const savedEntry = todayEntry.schedule.find(e => e.time === entry.time);
+          return savedEntry ? { ...entry, ...savedEntry } : entry;
+        });
+        setEntries(updatedEntries);
+      }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error loading data:', error);
+      setEntries([...fitnessSchedule]);
+      setHistory([]);
+      setLoading(false);
     }
   };
 
-  const handleActivityChange = (activity) => {
-    setActivities(prev => ({
-      ...prev,
-      [activity]: prev[activity] ? null : new Date().toISOString()
-    }));
+  const handleCheckboxChange = (index) => {
+    const newEntries = [...entries];
+    newEntries[index].checked = !newEntries[index].checked;
+    newEntries[index].timestamp = newEntries[index].checked ? new Date().toISOString() : null;
+    setEntries(newEntries);
+  };
+
+  const handleNotesChange = (index, value) => {
+    const newEntries = [...entries];
+    newEntries[index].notes = value;
+    setEntries(newEntries);
   };
 
   const handleSubmit = async () => {
     try {
       const entry = {
         date: new Date().toISOString(),
-        activities,
-        notes,
-        meals
+        schedule: entries.map(item => ({
+          time: item.time,
+          activity: item.activity,
+          diet: item.diet,
+          checked: item.checked,
+          timestamp: item.timestamp,
+          notes: item.notes
+        }))
       };
 
       const response = await fetch(`/api/users/${currentUser}`, {
@@ -71,7 +199,10 @@ export default function Home() {
         body: JSON.stringify(entry)
       });
 
-      if (!response.ok) throw new Error('Submission failed');
+      if (!response.ok) throw new Error('Save failed');
+      
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
       loadUserData(currentUser);
     } catch (error) {
       console.error('Submission error:', error);
@@ -80,119 +211,205 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <span className="font-medium">{currentUser}</span>
-        <h1 className="text-xl font-bold">Fitness Schedule</h1>
-        <button
-          onClick={() => {
-            document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-            window.location.href = '/login';
-          }}
-          className="text-blue-500 hover:text-blue-600"
-        >
-          Logout
-        </button>
-      </div>
-
-      {/* Activities */}
-      <div className="space-y-4">
-        {Object.entries(activityConfig).map(([key, config]) => (
-          <div key={key} className="bg-white p-4 rounded-lg shadow">
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={!!activities[key]}
-                onChange={() => handleActivityChange(key)}
-                className="h-4 w-4"
-              />
-              <span className="font-medium">
-                {key.charAt(0).toUpperCase() + key.slice(1)} ({config.time})
-              </span>
-            </label>
-
-            {activities[key] && (
-              <div className="mt-2 space-y-2">
-                <textarea
-                  placeholder="Add notes"
-                  value={notes[key] || ''}
-                  onChange={(e) => setNotes(prev => ({...prev, [key]: e.target.value}))}
-                  className="w-full p-2 border rounded-md"
-                />
-
-                {config.meal && (
-                  <div className="space-y-1">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span className="mr-1">Allowed foods:</span>
-                      <button
-                        title={getAllowedFoods(key).join(', ')}
-                        className="text-blue-500 hover:text-blue-600"
-                      >
-                        ℹ️
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="What did you eat?"
-                      value={meals[key] || ''}
-                      onChange={(e) => setMeals(prev => ({...prev, [key]: e.target.value}))}
-                      className="w-full p-2 border rounded-md"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 p-6 bg-blue-50 rounded-lg shadow-md border border-blue-100">
+          <div className="flex items-center space-x-4">
+            <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800 text-sm">
+              {currentUser.slice(0, -4)}
+            </span>
+            <h1 className="text-2xl font-bold text-blue-800">
+              {format(new Date(), 'EEEE, MMMM do')} Schedule
+            </h1>
           </div>
-        ))}
-      </div>
+          <button
+            onClick={() => {
+              document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+              window.location.href = '/login';
+            }}
+            className="text-blue-800 hover:text-blue-900 font-medium px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
 
-      <button
-        onClick={handleSubmit}
-        className="w-full mt-6 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
-      >
-        Submit
-      </button>
-
-      {/* History */}
-      <div className="mt-8">
-        <h2 className="text-lg font-bold mb-4">Previous Days</h2>
-        <div className="space-y-2">
-          {history.map((entry, index) => (
-            <div key={index} className="border rounded-md">
-              <details className="group">
-                <summary className="flex justify-between items-center p-2 bg-gray-100 cursor-pointer">
-                  <span>{format(parseISO(entry.date), 'MMM dd, yyyy')}</span>
-                  <span className="transform transition-transform group-open:rotate-180">
-                    ▼
-                  </span>
-                </summary>
-                <div className="p-4 bg-white">
-                  <pre className="whitespace-pre-wrap">
-                    {JSON.stringify(entry, null, 2)}
-                  </pre>
-                </div>
-              </details>
+        {/* Success Message */}
+        {showSuccess && (
+          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-lg">
+            <div className="flex items-center">
+              <span className="text-green-600">✓</span>
+              <p className="ml-2 text-green-700 font-medium">
+                Progress saved successfully! You can continue editing.
+              </p>
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* Main Table */}
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+          <table className="w-full">
+            <thead className="bg-blue-50">
+              <tr>
+                <th className="p-4 text-center w-32 text-blue-800 font-semibold">Status</th>
+                <th className="p-4 text-left w-40 text-blue-800 font-semibold">Time</th>
+                <th className="p-4 text-left w-48 text-blue-800 font-semibold">Activity</th>
+                <th className="p-4 text-left text-blue-800 font-semibold">Diet Plan</th>
+                <th className="p-4 text-left w-64 text-blue-800 font-semibold">Notes</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {entries.map((item, index) => (
+                <tr key={index} className="hover:bg-blue-50 transition-colors">
+                  <td className="p-4 text-center">
+                    <div className="flex flex-col items-center space-y-1">
+                      <input
+                        type="checkbox"
+                        checked={item.checked}
+                        onChange={() => handleCheckboxChange(index)}
+                        className="w-5 h-5 text-blue-600 border-2 border-gray-200 rounded focus:ring-blue-500"
+                      />
+                      {item.timestamp && (
+                        <span className="text-xs text-gray-500">
+                          {format(new Date(item.timestamp), 'hh:mm a')}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 font-medium text-gray-700">{item.time}</td>
+                  <td className="p-4 text-gray-600">{item.activity}</td>
+                  <td className="p-4 text-gray-600 whitespace-pre-line">{item.diet}</td>
+                  <td className="p-4">
+                    <textarea
+                      value={item.notes}
+                      onChange={(e) => handleNotesChange(index, e.target.value)}
+                      className="w-full h-20 p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder={item.activity === 'Weight Check' ? 'Enter today\'s weight' : 'Add notes...'}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+
+
+
+     {/* Save Button */}
+ <div className="mt-8 flex justify-end">
+          <button
+            onClick={handleSubmit}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-lg transition-colors flex items-center shadow-md hover:shadow-lg"
+          >
+            <span>Save Daily Progress</span>
+            <svg
+              className="ml-2 w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </button>
+        </div>
+
+
+     {/* Health Protocol */}
+     <div className="mt-8 bg-blue-50 rounded-xl p-6 shadow-sm border border-blue-100">
+          <h3 className="text-lg font-semibold text-blue-800 mb-4">Health Protocol</h3>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-blue-700">
+            <li className="flex items-center space-x-2">
+              <span>🚰</span>
+              <span>Drink 3L Water with Chia seeds/Sabja Ginjalu daily</span>
+            </li>
+            <li className="flex items-center space-x-2">
+              <span>📵</span>
+              <span>No mobile usage after 9PM</span>
+            </li>
+            <li className="flex items-center space-x-2">
+              <span>⏰</span>
+              <span>Maintain 10PM bedtime consistently</span>
+            </li>
+            <li className="flex items-center space-x-2">
+              <span>👩🍳</span>
+              <span>Prepare all meals independently</span>
+            </li>
+          </ul>
+        </div>    
+
+        {/* Previous Entries */}
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold text-blue-800 mb-6">Previous Entries</h2>
+          <div className="space-y-4">
+            {history.map((entry, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+                <details className="group">
+                  <summary className="flex justify-between items-center px-6 py-4 bg-blue-50 hover:bg-blue-100 cursor-pointer">
+                    <span className="font-medium text-blue-800">
+                      {format(parseISO(entry.date), 'MMMM do, yyyy')}
+                    </span>
+                    <span className="transform transition-transform group-open:-rotate-180 text-blue-600">
+                      ▼
+                    </span>
+                  </summary>
+                  <div className="p-6">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <table className="w-full">
+                        <tbody className="divide-y divide-gray-200">
+                          {entry.schedule?.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-gray-100">
+                              <td className="p-3 w-32 text-center">
+                                {item.checked ? (
+                                  <span className="text-green-600 text-sm">✓</span>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">◯</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-gray-600 text-sm w-40">{item.time}</td>
+                              <td className="p-3 text-gray-600 text-sm">{item.activity}</td>
+                              <td className="p-3 text-gray-500 text-sm max-w-xs">
+                                {item.notes || 'No notes'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function getAllowedFoods(mealType) {
-  const allowedFoods = {
-    breakfast: ['Oatmeal', 'Eggs', 'Yogurt'],
-    lunch: ['Salad', 'Chicken', 'Rice'],
-    dinner: ['Fish', 'Vegetables', 'Quinoa']
-  };
-  return allowedFoods[mealType] || [];
+function isSameDay(d1, d2) {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
 }
+
+
+
+
+
+
+
