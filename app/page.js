@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 
+
+
 const fitnessSchedule = [
   {
     time: '5:00 AM',
@@ -134,21 +136,23 @@ export default function Home() {
       const data = await res.json();
       
       const safeHistory = Array.isArray(data?.history) ? data.history : [];
-      setHistory(safeHistory);
-
+      
+      // Separate today's entry from history
       const todayEntry = safeHistory.find(entry => 
         isSameDay(new Date(entry.date), new Date())
       );
+      
+      // Filter out today's entry from history display
+      const filteredHistory = safeHistory.filter(entry => 
+        !isSameDay(new Date(entry.date), new Date())
+      );
+      setHistory(filteredHistory);
 
+      // Update form with today's entry if exists
       if (todayEntry) {
         const updatedEntries = entries.map(entry => {
           const savedEntry = todayEntry.schedule.find(e => e.time === entry.time);
-          return savedEntry ? { 
-            ...entry,
-            checked: savedEntry.checked || false,
-            timestamp: savedEntry.timestamp || null,
-            notes: savedEntry.notes || ''
-          } : entry;
+          return savedEntry ? { ...entry, ...savedEntry } : entry;
         });
         setEntries(updatedEntries);
       }
@@ -217,12 +221,12 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8 p-6 bg-white rounded-lg shadow-md">
+        <div className="flex justify-between items-center mb-8 p-6 bg-blue-50 rounded-lg shadow-md border border-blue-100">
           <div className="flex items-center space-x-4">
             <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800 text-sm">
               {currentUser}
             </span>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-2xl font-bold text-blue-800">
               {format(new Date(), 'EEEE, MMMM do')} Schedule
             </h1>
           </div>
@@ -231,7 +235,7 @@ export default function Home() {
               document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
               window.location.href = '/login';
             }}
-            className="text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
+            className="text-blue-800 hover:text-blue-900 font-medium px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
           >
             Logout
           </button>
@@ -243,34 +247,34 @@ export default function Home() {
             <div className="flex items-center">
               <span className="text-green-600">✓</span>
               <p className="ml-2 text-green-700 font-medium">
-                Today's progress saved successfully!
+                Progress saved successfully! You can continue editing.
               </p>
             </div>
           </div>
         )}
 
         {/* Main Table */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
           <table className="w-full">
-            <thead className="bg-gray-800 text-white">
+            <thead className="bg-blue-50">
               <tr>
-                <th className="p-4 text-center w-32">Status</th>
-                <th className="p-4 text-left w-40">Time</th>
-                <th className="p-4 text-left w-48">Activity</th>
-                <th className="p-4 text-left">Diet Plan</th>
-                <th className="p-4 text-left w-64">Notes</th>
+                <th className="p-4 text-center w-32 text-blue-800 font-semibold">Status</th>
+                <th className="p-4 text-left w-40 text-blue-800 font-semibold">Time</th>
+                <th className="p-4 text-left w-48 text-blue-800 font-semibold">Activity</th>
+                <th className="p-4 text-left text-blue-800 font-semibold">Diet Plan</th>
+                <th className="p-4 text-left w-64 text-blue-800 font-semibold">Notes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100">
               {entries.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                <tr key={index} className="hover:bg-blue-50 transition-colors">
                   <td className="p-4 text-center">
                     <div className="flex flex-col items-center space-y-1">
                       <input
                         type="checkbox"
                         checked={item.checked}
                         onChange={() => handleCheckboxChange(index)}
-                        className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-5 h-5 text-blue-600 border-2 border-gray-200 rounded focus:ring-blue-500"
                       />
                       {item.timestamp && (
                         <span className="text-xs text-gray-500">
@@ -286,7 +290,7 @@ export default function Home() {
                     <textarea
                       value={item.notes}
                       onChange={(e) => handleNotesChange(index, e.target.value)}
-                      className="w-full h-20 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full h-20 p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       placeholder={item.activity === 'Weight Check' ? 'Enter today\'s weight' : 'Add notes...'}
                     />
                   </td>
@@ -296,94 +300,44 @@ export default function Home() {
           </table>
         </div>
 
-        {/* Health Protocol */}
-        <div className="mt-8 bg-blue-50 rounded-xl p-6 shadow-sm border border-blue-100">
-          <h3 className="text-lg font-semibold text-blue-800 mb-4">Health Protocol</h3>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-blue-700">
-            <li className="flex items-center space-x-2">
-              <span>🚰</span>
-              <span>Drink 3L Water with Chia seeds/Sabja Ginjalu daily</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <span>📵</span>
-              <span>No mobile usage after 9PM</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <span>⏰</span>
-              <span>Maintain 10PM bedtime consistently</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <span>👩🍳</span>
-              <span>Prepare all meals independently</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Save Button */}
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={handleSubmit}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-lg transition-colors flex items-center shadow-md hover:shadow-lg"
-          >
-            <span>Save Daily Progress</span>
-            <svg
-              className="ml-2 w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </button>
-        </div>
-
         {/* Previous Entries */}
         <div className="mt-12">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Previous Entries</h2>
+          <h2 className="text-xl font-semibold text-blue-800 mb-6">Previous Entries</h2>
           <div className="space-y-4">
             {history.map((entry, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
                 <details className="group">
-                  <summary className="flex justify-between items-center px-6 py-4 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                    <span className="font-medium text-gray-700">
+                  <summary className="flex justify-between items-center px-6 py-4 bg-blue-50 hover:bg-blue-100 cursor-pointer">
+                    <span className="font-medium text-blue-800">
                       {format(parseISO(entry.date), 'MMMM do, yyyy')}
                     </span>
-                    <span className="transform transition-transform group-open:-rotate-180 text-gray-500">
+                    <span className="transform transition-transform group-open:-rotate-180 text-blue-600">
                       ▼
                     </span>
                   </summary>
                   <div className="p-6">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="p-3 text-left">Time</th>
-                          <th className="p-3 text-left">Activity</th>
-                          <th className="p-3 text-left">Status</th>
-                          <th className="p-3 text-left">Notes</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {entry.schedule?.map((item, idx) => (
-                          <tr key={idx}>
-                            <td className="p-3 font-medium">{item.time}</td>
-                            <td className="p-3">{item.activity}</td>
-                            <td className="p-3">
-                              {item.checked ? (
-                                <span className="text-green-600">✓ Completed</span>
-                              ) : (
-                                <span className="text-gray-400">Pending</span>
-                              )}
-                            </td>
-                            <td className="p-3 text-gray-600">{item.notes}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <table className="w-full">
+                        <tbody className="divide-y divide-gray-200">
+                          {entry.schedule?.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-gray-100">
+                              <td className="p-3 w-32 text-center">
+                                {item.checked ? (
+                                  <span className="text-green-600 text-sm">✓</span>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">◯</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-gray-600 text-sm w-40">{item.time}</td>
+                              <td className="p-3 text-gray-600 text-sm">{item.activity}</td>
+                              <td className="p-3 text-gray-500 text-sm max-w-xs">
+                                {item.notes || 'No notes'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </details>
               </div>
@@ -402,3 +356,10 @@ function isSameDay(d1, d2) {
     d1.getDate() === d2.getDate()
   );
 }
+
+
+
+
+
+
+
