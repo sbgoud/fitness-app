@@ -44,9 +44,9 @@ Idli/Dosa without oil (Avoid rice based)`,
     time: '1:00 PM - 2:00 PM',
     activity: 'Lunch',
     diet: `1-2 Pulkas/Whole Wheat/Brown Rice
-  Vegetable Curry + Dal
-  Curd (Small bowl)
-  Non-Veg Options: Chicken, Fish, Eggs`,
+Vegetable Curry + Dal
+Curd (Small bowl)
+Non-Veg Options: Chicken, Fish, Eggs`,
     entry: ''
   },
   {
@@ -104,19 +104,26 @@ export default function Home() {
       const res = await fetch(`/api/users/${user}`);
       if (!res.ok) throw new Error('Failed to fetch data');
       const data = await res.json();
-      setHistory(data.history || []);
       
-      const todayEntry = data.history.find(entry => 
+      // Ensure valid history array
+      const safeHistory = Array.isArray(data?.history) ? data.history : [];
+      setHistory(safeHistory);
+
+      // Ensure valid schedule data
+      const todayEntry = safeHistory.find(entry => 
         isSameDay(new Date(entry.date), new Date())
       );
+      const safeEntries = Array.isArray(todayEntry?.schedule) 
+        ? [...todayEntry.schedule]
+        : [...fitnessSchedule];
       
-      if (todayEntry) {
-        setEntries(todayEntry.schedule);
-      }
-      
+      setEntries(safeEntries);
       setLoading(false);
     } catch (error) {
       console.error('Error loading data:', error);
+      setEntries([...fitnessSchedule]);
+      setHistory([]);
+      setLoading(false);
     }
   };
 
@@ -273,7 +280,7 @@ export default function Home() {
           Previous Entries
         </h2>
         <div className="space-y-3">
-          {history.map((entry, index) => (
+          {(Array.isArray(history) ? history : []).map((entry, index) => (
             <div key={index} className="border rounded-lg overflow-hidden">
               <details className="group">
                 <summary className="flex justify-between items-center px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer">
@@ -299,7 +306,7 @@ export default function Home() {
                 <div className="bg-white p-4">
                   <table className="w-full">
                     <tbody className="divide-y divide-gray-200">
-                      {entry.schedule.map((item, idx) => (
+                      {entry.schedule?.map((item, idx) => (
                         <tr key={idx}>
                           <td className="pr-4 py-2 font-medium w-[15%]">
                             {item.time}
