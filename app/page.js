@@ -44,9 +44,9 @@ Idli/Dosa without oil (Avoid rice based)`,
     time: '1:00 PM - 2:00 PM',
     activity: 'Lunch',
     diet: `1-2 Pulkas/Whole Wheat/Brown Rice
-Vegetable Curry + Dal
-Curd (Small bowl)
-Non-Veg Options: Chicken, Fish, Eggs`,
+  Vegetable Curry + Dal
+  Curd (Small bowl)
+  Non-Veg Options: Chicken, Fish, Eggs`,
     entry: ''
   },
   {
