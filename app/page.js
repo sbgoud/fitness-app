@@ -3,8 +3,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 
-
-
 const fitnessSchedule = [
   {
     time: '5:00 AM',
@@ -129,36 +127,36 @@ export default function Home() {
     }
   }, [router]);
 
- // Update the loadUserData function:
-const loadUserData = async (user) => {
-  try {
-    const res = await fetch(`/api/users/${user}`);
-    if (!res.ok) throw new Error('Failed to fetch data');
-    const data = await res.json();
-    
-    const safeHistory = Array.isArray(data?.history) ? data.history : [];
-    const todayEntry = safeHistory.find(entry => 
-      isSameDay(new Date(entry.date), new Date())
-    );
-
-    // Merge existing data properly
-    setEntries(prev => prev.map(defaultEntry => {
-      const savedEntry = todayEntry?.schedule?.find(e => 
-        e.time === defaultEntry.time && 
-        e.activity === defaultEntry.activity
+  const loadUserData = async (user) => {
+    try {
+      const res = await fetch(`/api/users/${user}`);
+      if (!res.ok) throw new Error('Failed to fetch data');
+      const data = await res.json();
+      
+      const safeHistory = Array.isArray(data?.history) ? data.history : [];
+      const todayEntry = safeHistory.find(entry => 
+        isSameDay(new Date(entry.date), new Date())
       );
-      return savedEntry ? { ...defaultEntry, ...savedEntry } : defaultEntry;
-    }));
 
-    setHistory(safeHistory.filter(entry => 
-      !isSameDay(new Date(entry.date), new Date())
-    ));
-    setLoading(false);
-  } catch (error) {
-    console.error('Error loading data:', error);
-    setLoading(false);
-  }
-};
+      setEntries(prev => 
+        prev.map(defaultItem => {
+          const savedItem = todayEntry?.schedule?.find(s => 
+            s.time === defaultItem.time && 
+            s.activity === defaultItem.activity
+          );
+          return savedItem ? { ...defaultItem, ...savedItem } : defaultItem;
+        })
+      );
+
+      setHistory(safeHistory.filter(entry => 
+        !isSameDay(new Date(entry.date), new Date())
+      ));
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setLoading(false);
+    }
+  };
 
   const handleCheckboxChange = (index) => {
     const newEntries = [...entries];
@@ -214,11 +212,10 @@ const loadUserData = async (user) => {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-8 p-6 bg-blue-50 rounded-lg shadow-md border border-blue-100">
           <div className="flex items-center space-x-4">
             <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800 text-sm">
-              {currentUser.slice(0, -4)}
+              {currentUser}
             </span>
             <h1 className="text-2xl font-bold text-blue-800">
               {format(new Date(), 'EEEE, MMMM do')} Schedule
@@ -235,7 +232,6 @@ const loadUserData = async (user) => {
           </button>
         </div>
 
-        {/* Success Message */}
         {showSuccess && (
           <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-lg">
             <div className="flex items-center">
@@ -247,7 +243,6 @@ const loadUserData = async (user) => {
           </div>
         )}
 
-        {/* Main Table */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
           <table className="w-full">
             <thead className="bg-blue-50">
@@ -294,11 +289,7 @@ const loadUserData = async (user) => {
           </table>
         </div>
 
-
-
-
-     {/* Save Button */}
- <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex justify-end">
           <button
             onClick={handleSubmit}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-lg transition-colors flex items-center shadow-md hover:shadow-lg"
@@ -320,9 +311,7 @@ const loadUserData = async (user) => {
           </button>
         </div>
 
-
-     {/* Health Protocol */}
-     <div className="mt-8 bg-blue-50 rounded-xl p-6 shadow-sm border border-blue-100">
+        <div className="mt-8 bg-blue-50 rounded-xl p-6 shadow-sm border border-blue-100">
           <h3 className="text-lg font-semibold text-blue-800 mb-4">Health Protocol</h3>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-blue-700">
             <li className="flex items-center space-x-2">
@@ -342,9 +331,8 @@ const loadUserData = async (user) => {
               <span>Prepare all meals independently</span>
             </li>
           </ul>
-        </div>    
+        </div>
 
-        {/* Previous Entries */}
         <div className="mt-12">
           <h2 className="text-xl font-semibold text-blue-800 mb-6">Previous Entries</h2>
           <div className="space-y-4">
@@ -400,10 +388,3 @@ function isSameDay(d1, d2) {
     d1.getDate() === d2.getDate()
   );
 }
-
-
-
-
-
-
-
