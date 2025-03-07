@@ -105,6 +105,30 @@ Non-Veg Options: Chicken, Fish, Eggs`,
   }
 ];
 
+const getLocalDateString = () => {
+  let date;
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    date = new Date().toLocaleString('en-IN', { timeZone });
+  } catch (error) {
+    date = new Date(Date.now() + (5.5 * 60 * 60 * 1000));
+  }
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
+const isSameEntryDate = (savedDate, incomingDate) => {
+  const [savedDay, savedMonth, savedYear] = savedDate.split('-');
+  const [incomingDay, incomingMonth, incomingYear] = incomingDate.split('-');
+  return (
+    savedDay === incomingDay &&
+    savedMonth === incomingMonth &&
+    savedYear === incomingYear
+  );
+};
+
 export default function Home() {
   const router = useRouter();
   const [entries, setEntries] = useState([...fitnessSchedule]);
@@ -134,8 +158,9 @@ export default function Home() {
       const data = await res.json();
       
       const safeHistory = Array.isArray(data?.history) ? data.history : [];
+      const todayDate = getLocalDateString();
       const todayEntry = safeHistory.find(entry => 
-        isSameDay(new Date(entry.date), new Date())
+        isSameEntryDate(entry.date, todayDate)
       );
 
       setEntries(prev => 
@@ -149,7 +174,7 @@ export default function Home() {
       );
 
       setHistory(safeHistory.filter(entry => 
-        !isSameDay(new Date(entry.date), new Date())
+        !isSameEntryDate(entry.date, todayDate)
       ));
       setLoading(false);
     } catch (error) {
@@ -173,8 +198,9 @@ export default function Home() {
 
   const handleSubmit = async () => {
     try {
+      const entryDate = getLocalDateString();
       const entry = {
-        date: new Date().toISOString(),
+        date: entryDate,
         schedule: entries.map(item => ({
           time: item.time,
           activity: item.activity,
@@ -215,7 +241,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8 p-6 bg-blue-50 rounded-lg shadow-md border border-blue-100">
           <div className="flex items-center space-x-4">
             <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800 text-sm">
-              {currentUser}
+              {currentUser.slice(0, -4)}
             </span>
             <h1 className="text-2xl font-bold text-blue-800">
               {format(new Date(), 'EEEE, MMMM do')} Schedule

@@ -1,10 +1,20 @@
 import { put, list } from '@vercel/blob';
 
+function isSameEntryDate(savedDate, incomingDate) {
+  const [savedDay, savedMonth, savedYear] = savedDate.split('-');
+  const [incomingDay, incomingMonth, incomingYear] = incomingDate.split('-');
+  return (
+    savedDay === incomingDay &&
+    savedMonth === incomingMonth &&
+    savedYear === incomingYear
+  );
+}
+
 export async function POST(request, { params }) {
   const { user } = params;
   const body = await request.json();
 
-  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33'].includes(user)) {
+  if (!['aaa11', 'bbb22', 'ccc33', 'ddd44'].includes(user)) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
 
@@ -16,7 +26,7 @@ export async function POST(request, { params }) {
       const currentData = await fetch(blobs[0].url).then(r => r.json());
       history = Array.isArray(currentData.history) 
         ? currentData.history.filter(entry => 
-            !isSameDay(new Date(entry.date), new Date(body.date))
+            !isSameEntryDate(entry.date, body.date)
           )
         : [];
     }
@@ -41,7 +51,7 @@ export async function POST(request, { params }) {
 export async function GET(request, { params }) {
   const { user } = params;
 
-  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44'].includes(user))  {
+  if (!['aaa11', 'bbb22', 'ccc33', 'ddd44'].includes(user)) {
     return Response.json({ history: [] });
   }
 
@@ -57,12 +67,4 @@ export async function GET(request, { params }) {
     console.error('Blob fetch error:', error);
     return Response.json({ history: [] });
   }
-}
-
-function isSameDay(d1, d2) {
-  return (
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
-  );
 }
