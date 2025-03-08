@@ -14,7 +14,7 @@ export async function POST(request, { params }) {
   const { user } = params;
   const body = await request.json();
 
-  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44'].includes(user)) {
+  if (!['aaa11', 'bbb22', 'ccc33', 'ddd44'].includes(user)) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
 
@@ -31,6 +31,10 @@ export async function POST(request, { params }) {
         : [];
     }
 
+    if (!body.date || !Array.isArray(body.schedule)) {
+      return Response.json({ error: 'Invalid data format' }, { status: 400 });
+    }
+
     const updatedData = {
       history: [...history, body]
     };
@@ -44,7 +48,9 @@ export async function POST(request, { params }) {
     return Response.json({ success: true });
   } catch (error) {
     console.error('Blob error:', error);
-    return Response.json({ error: 'Server error' }, { status: 500 });
+    return Response.json({ 
+      error: 'Server error: ' + error.message 
+    }, { status: 500 });
   }
 }
 

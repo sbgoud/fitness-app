@@ -136,6 +136,7 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState('');
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [saveAttempted, setSaveAttempted] = useState(false);
 
   useEffect(() => {
     const userCookie = document.cookie
@@ -198,7 +199,9 @@ export default function Home() {
 
   const handleSubmit = async () => {
     try {
+      setSaveAttempted(true);
       const entryDate = getLocalDateString();
+      
       const entry = {
         date: entryDate,
         schedule: entries.map(item => ({
@@ -217,13 +220,17 @@ export default function Home() {
         body: JSON.stringify(entry)
       });
 
-      if (!response.ok) throw new Error('Save failed');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Save failed');
       
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       loadUserData(currentUser);
     } catch (error) {
       console.error('Submission error:', error);
+      alert(`Save failed: ${error.message}`);
+    } finally {
+      setSaveAttempted(false);
     }
   };
 
@@ -241,7 +248,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8 p-6 bg-blue-50 rounded-lg shadow-md border border-blue-100">
           <div className="flex items-center space-x-4">
             <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800 text-sm">
-              {currentUser.slice(0, -4)}
+              {currentUser}
             </span>
             <h1 className="text-2xl font-bold text-blue-800">
               {format(new Date(), 'EEEE, MMMM do')} Schedule
@@ -318,9 +325,12 @@ export default function Home() {
         <div className="mt-8 flex justify-end">
           <button
             onClick={handleSubmit}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-lg transition-colors flex items-center shadow-md hover:shadow-lg"
+            disabled={saveAttempted}
+            className={`bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-lg transition-colors flex items-center shadow-md hover:shadow-lg ${
+              saveAttempted ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            <span>Save Daily Progress</span>
+            {saveAttempted ? 'Saving...' : 'Save Daily Progress'}
             <svg
               className="ml-2 w-5 h-5"
               fill="none"
@@ -367,7 +377,7 @@ export default function Home() {
                 <details className="group">
                   <summary className="flex justify-between items-center px-6 py-4 bg-blue-50 hover:bg-blue-100 cursor-pointer">
                     <span className="font-medium text-blue-800">
-                      {format(parseISO(entry.date), 'MMMM do, yyyy')}
+                      {format(parseISO(entry.date.replace(/(\d{2})-(\d{2})-(\d{4})/, '$3-$2-$1')), 'MMMM do, yyyy')}
                     </span>
                     <span className="transform transition-transform group-open:-rotate-180 text-blue-600">
                       ▼
