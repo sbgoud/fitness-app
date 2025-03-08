@@ -106,27 +106,33 @@ Non-Veg Options: Chicken, Fish, Eggs`,
 ];
 
 const getLocalDateString = () => {
-  let date;
   try {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    date = new Date().toLocaleString('en-IN', { timeZone });
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+    const formatter = new Intl.DateTimeFormat('en-IN', {
+      timeZone,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    
+    const parts = formatter.formatToParts(new Date());
+    return [
+      parts.find(p => p.type === 'day').value.padStart(2, '0'),
+      parts.find(p => p.type === 'month').value.padStart(2, '0'),
+      parts.find(p => p.type === 'year').value
+    ].join('-');
   } catch (error) {
-    date = new Date(Date.now() + (5.5 * 60 * 60 * 1000));
+    const istDate = new Date(Date.now() + (5.5 * 60 * 60 * 1000));
+    return [
+      String(istDate.getUTCDate()).padStart(2, '0'),
+      String(istDate.getUTCMonth() + 1).padStart(2, '0'),
+      istDate.getUTCFullYear()
+    ].join('-');
   }
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
 };
 
 const isSameEntryDate = (savedDate, incomingDate) => {
-  const [savedDay, savedMonth, savedYear] = savedDate.split('-');
-  const [incomingDay, incomingMonth, incomingYear] = incomingDate.split('-');
-  return (
-    savedDay === incomingDay &&
-    savedMonth === incomingMonth &&
-    savedYear === incomingYear
-  );
+  return savedDate === incomingDate; // Direct string comparison
 };
 
 export default function Home() {
@@ -372,55 +378,53 @@ export default function Home() {
         <div className="mt-12">
           <h2 className="text-xl font-semibold text-blue-800 mb-6">Previous Entries</h2>
           <div className="space-y-4">
-            {history.map((entry, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
-                <details className="group">
-                  <summary className="flex justify-between items-center px-6 py-4 bg-blue-50 hover:bg-blue-100 cursor-pointer">
-                    <span className="font-medium text-blue-800">
-                      {format(parseISO(entry.date.replace(/(\d{2})-(\d{2})-(\d{4})/, '$3-$2-$1')), 'MMMM do, yyyy')}
-                    </span>
-                    <span className="transform transition-transform group-open:-rotate-180 text-blue-600">
-                      ▼
-                    </span>
-                  </summary>
-                  <div className="p-6">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <table className="w-full">
-                        <tbody className="divide-y divide-gray-200">
-                          {entry.schedule?.map((item, idx) => (
-                            <tr key={idx} className="hover:bg-gray-100">
-                              <td className="p-3 w-32 text-center">
-                                {item.checked ? (
-                                  <span className="text-green-600 text-sm">✓</span>
-                                ) : (
-                                  <span className="text-gray-400 text-sm">◯</span>
-                                )}
-                              </td>
-                              <td className="p-3 text-gray-600 text-sm w-40">{item.time}</td>
-                              <td className="p-3 text-gray-600 text-sm">{item.activity}</td>
-                              <td className="p-3 text-gray-500 text-sm max-w-xs">
-                                {item.notes || 'No notes'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+            {history.map((entry, index) => {
+              // Safely convert DD-MM-YYYY to ISO format
+              const [day, month, year] = entry.date.split('-');
+              const isoDate = `${year}-${month}-${day}`;
+              
+              return (
+                <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+                  <details className="group">
+                    <summary className="flex justify-between items-center px-6 py-4 bg-blue-50 hover:bg-blue-100 cursor-pointer">
+                      <span className="font-medium text-blue-800">
+                        {format(parseISO(isoDate), 'MMMM do, yyyy')}
+                      </span>
+                      <span className="transform transition-transform group-open:-rotate-180 text-blue-600">
+                        ▼
+                      </span>
+                    </summary>
+                    <div className="p-6">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <table className="w-full">
+                          <tbody className="divide-y divide-gray-200">
+                            {entry.schedule?.map((item, idx) => (
+                              <tr key={idx} className="hover:bg-gray-100">
+                                <td className="p-3 w-32 text-center">
+                                  {item.checked ? (
+                                    <span className="text-green-600 text-sm">✓</span>
+                                  ) : (
+                                    <span className="text-gray-400 text-sm">◯</span>
+                                  )}
+                                </td>
+                                <td className="p-3 text-gray-600 text-sm w-40">{item.time}</td>
+                                <td className="p-3 text-gray-600 text-sm">{item.activity}</td>
+                                <td className="p-3 text-gray-500 text-sm max-w-xs">
+                                  {item.notes || 'No notes'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                </details>
-              </div>
-            ))}
+                  </details>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function isSameDay(d1, d2) {
-  return (
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
   );
 }

@@ -14,7 +14,7 @@ export async function POST(request, { params }) {
   const { user } = params;
   const body = await request.json();
 
-  if (!['aaa11', 'bbb22', 'ccc33', 'ddd44'].includes(user)) {
+  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44'].includes(user)) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
 
@@ -29,10 +29,6 @@ export async function POST(request, { params }) {
             !isSameEntryDate(entry.date, body.date)
           )
         : [];
-    }
-
-    if (!body.date || !Array.isArray(body.schedule)) {
-      return Response.json({ error: 'Invalid data format' }, { status: 400 });
     }
 
     const updatedData = {
@@ -57,7 +53,7 @@ export async function POST(request, { params }) {
 export async function GET(request, { params }) {
   const { user } = params;
 
-  if (!['aaa11', 'bbb22', 'ccc33', 'ddd44'].includes(user)) {
+  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44'].includes(user)) {
     return Response.json({ history: [] });
   }
 
