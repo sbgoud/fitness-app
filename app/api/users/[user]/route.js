@@ -14,7 +14,14 @@ export async function POST(request, { params }) {
   const { user } = params;
   const body = await request.json();
 
-  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44', 'tirumala1234'].includes(user)) {
+  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33', 'tirumala1234',  "Chinni4823",
+    "Laddu9372",
+    "Amruth2645",
+    "Pandu7189",
+    "Sweety5031",
+    "Sindhu8457",
+    "Ravinder1294",
+    "Thirumala3768" ].includes(user)) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
 
@@ -53,7 +60,14 @@ export async function POST(request, { params }) {
 export async function GET(request, { params }) {
   const { user } = params;
 
-  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44', 'tirumala1234'].includes(user)) {
+  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33', 'tirumala1234',  "Chinni4823",
+    "Laddu9372",
+    "Amruth2645",
+    "Pandu7189",
+    "Sweety5031",
+    "Sindhu8457",
+    "Ravinder1294",
+    "Thirumala3768" ].includes(user)) {
     return Response.json({ history: [] });
   }
 

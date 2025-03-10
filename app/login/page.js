@@ -7,7 +7,14 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const validUsers = ['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33', 'tirumala1234'];
+  const validUsers = ['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33', 'tirumala1234',  "Chinni4823",
+    "Laddu9372",
+    "Amruth2645",
+    "Pandu7189",
+    "Sweety5031",
+    "Sindhu8457",
+    "Ravinder1294",
+    "Thirumala3768" ];
 
   useEffect(() => {
     const userCookie = document.cookie
