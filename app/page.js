@@ -272,13 +272,32 @@ export default function Home() {
   };
 
   const logout = () => {
-    setCurrentUser("");
+    // Ensure state is cleared (if using useState)
+    if (typeof setCurrentUser === "function") {
+      setCurrentUser(null); // Correct way to update state
+    }
+  
+    // Remove user data from localStorage and sessionStorage
     localStorage.removeItem("currentUser");
     sessionStorage.removeItem("currentUser");
+  
+    // Delete authentication cookies properly
     document.cookie =
-      "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      "currentUser=; path=/; domain=" +
+      window.location.hostname +
+      "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  
+    // Optional: Clear all cookies (for a full logout)
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/");
+    });
+  
+    // Redirect user to login page
     window.location.href = "https://fitnessbysbgoud.vercel.app/login";
   };
+  
 
   if (loading) {
     return (
