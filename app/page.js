@@ -7,25 +7,28 @@ const fitnessSchedule = [
   {
     time: "5:00 AM",
     activity: "Wake up",
-    diet: "Lemon water + Honey",
+    diet: "",
     checked: false,
     timestamp: null,
+    placeholder: "Did You sleep well? , mention your sleeping time",
     notes: "",
   },
   {
     time: "5:30 AM",
     activity: "Morning drink",
-    diet: "Black Jeera Water Green Tea or Lemon Tea",
+    diet: "Lemon water + Honey , Black Jeera Water , Green Tea or Lemon Tea, Munaga aaku Water + Lemon + Honey",
     checked: false,
     timestamp: null,
+    placeholder: "what did you take as morning drink?",
     notes: "",
   },
   {
     time: "6:00 AM - 7:00 AM",
     activity: "Exercise",
-    diet: "Munaga aaku Water + Lemon + Honey",
+    diet: " do any exercise and mention in notes, with duration",
     checked: false,
     timestamp: null,
+    placeholder: "what exercise did you try today?",
     notes: "",
   },
   {
@@ -40,6 +43,8 @@ Seasonal Fruits/Vegetable Salad (Keera/Carrot/Beetroot)
 Idli/Dosa without oil (Avoid rice based)`,
     checked: false,
     timestamp: null,
+    placeholder:
+      "whats your breakfast today?, and dont forget to thank who prepared it",
     notes: "",
   },
   {
@@ -48,17 +53,19 @@ Idli/Dosa without oil (Avoid rice based)`,
     diet: "Fresh fruit or juice (Banana, Orange, Carrot, Cucumber, Avocado)",
     checked: false,
     timestamp: null,
+    placeholder: "done or skipped?",
     notes: "",
   },
   {
     time: "1:00 PM - 2:00 PM",
     activity: "Lunch",
     diet: `1-2 Pulkas/Whole Wheat/Brown Rice
-Vegetable Curry + Dal
-Curd (Small bowl)
-Non-Veg Options: Chicken, Fish, Eggs`,
+Vegetable Curry + Dal,
+Curd (Small bowl),
+Non-Veg(only sunday) Options: Chicken, Fish, Eggs`,
     checked: false,
     timestamp: null,
+    placeholder: "timely lunch is mandatory, dont break the streak",
     notes: "",
   },
   {
@@ -67,24 +74,27 @@ Non-Veg Options: Chicken, Fish, Eggs`,
     diet: "Pumpkin Seeds, Roasted Chana, Watermelon Seeds",
     checked: false,
     timestamp: null,
+    placeholder: "just do it",
     notes: "",
   },
   {
     time: "8:00 PM - 9:00 PM",
     activity: "Dinner",
     diet: `1-2 Pulkas with Vegetable Curry
-Multigrain Jaava Sprouts/Papaya
-Non-Veg Options: Chicken, Fish, Eggs`,
+Multigrain Jaava Sprouts/Papaya, Oats, Vegetable Salad,
+Non-Veg(only sunday) Options: Chicken, Fish, Eggs`,
     checked: false,
     timestamp: null,
+    placeholder: "have dinner, 2 hours before sleep",
     notes: "",
   },
   {
     time: "9:00 PM - 9:30 PM",
     activity: "Walking",
-    diet: "Oats, Vegetable Salad",
+    diet: "",
     checked: false,
     timestamp: null,
+    placeholder: "as much as possible, give time for your physical health",
     notes: "",
   },
   {
@@ -93,48 +103,51 @@ Non-Veg Options: Chicken, Fish, Eggs`,
     diet: "Prepare for next day diet & Sleep",
     checked: false,
     timestamp: null,
+    placeholder: "what your diet tomorrow will be? did you prepare anything?",
     notes: "",
   },
   {
     time: "10:00 PM",
-    activity: "Weight Check",
+    activity: "Weight Check and sleep",
     diet: "",
     checked: false,
     timestamp: null,
-    notes: "Enter today's weight",
+    placeholder: "Enter today's weight",
+    notes: "",
   },
 ];
 
 const healthProtocols = [
-  { emoji: '💧', text: 'Drink 3L Water with Chia seeds/Sabja Ginjalu daily' },
-  { emoji: '📵', text: 'No mobile usage after 9PM' },
-  { emoji: '⏰', text: 'Maintain 10PM bedtime consistently' },
-  { emoji: '👩🍳', text: 'Prepare all meals independently' },
+  { emoji: "💧", text: "Drink 3L Water with Chia seeds/Sabja Ginjalu daily" },
+  { emoji: "📵", text: "No mobile usage after 9PM" },
+  { emoji: "⏰", text: "Maintain 10PM bedtime consistently" },
+  { emoji: "👩🍳", text: "Prepare all meals independently" },
 ];
 
 const getLocalDateString = () => {
   try {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
-    const formatter = new Intl.DateTimeFormat('en-IN', {
+    const timeZone =
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
+    const formatter = new Intl.DateTimeFormat("en-IN", {
       timeZone,
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
-    
+
     const parts = formatter.formatToParts(new Date());
     return [
-      parts.find(p => p.type === 'day').value.padStart(2, '0'),
-      parts.find(p => p.type === 'month').value.padStart(2, '0'),
-      parts.find(p => p.type === 'year').value
-    ].join('-');
+      parts.find((p) => p.type === "day").value.padStart(2, "0"),
+      parts.find((p) => p.type === "month").value.padStart(2, "0"),
+      parts.find((p) => p.type === "year").value,
+    ].join("-");
   } catch (error) {
-    const istDate = new Date(Date.now() + (5.5 * 60 * 60 * 1000));
+    const istDate = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
     return [
-      String(istDate.getUTCDate()).padStart(2, '0'),
-      String(istDate.getUTCMonth() + 1).padStart(2, '0'),
-      istDate.getUTCFullYear()
-    ].join('-');
+      String(istDate.getUTCDate()).padStart(2, "0"),
+      String(istDate.getUTCMonth() + 1).padStart(2, "0"),
+      istDate.getUTCFullYear(),
+    ].join("-");
   }
 };
 
@@ -144,20 +157,20 @@ export default function Home() {
   const router = useRouter();
   const [entries, setEntries] = useState([...fitnessSchedule]);
   const [history, setHistory] = useState([]);
-  const [currentUser, setCurrentUser] = useState('');
+  const [currentUser, setCurrentUser] = useState("");
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [saveAttempted, setSaveAttempted] = useState(false);
-  const [validationError, setValidationError] = useState('');
+  const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
     const userCookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('currentUser='))
-      ?.split('=')[1];
+      .split("; ")
+      .find((row) => row.startsWith("currentUser="))
+      ?.split("=")[1];
 
     if (!userCookie) {
-      router.push('/login');
+      router.push("/login");
     } else {
       setCurrentUser(userCookie);
       loadUserData(userCookie);
@@ -167,31 +180,31 @@ export default function Home() {
   const loadUserData = async (user) => {
     try {
       const res = await fetch(`/api/users/${user}`);
-      if (!res.ok) throw new Error('Failed to fetch data');
+      if (!res.ok) throw new Error("Failed to fetch data");
       const data = await res.json();
-      
+
       const safeHistory = Array.isArray(data?.history) ? data.history : [];
       const todayDate = getLocalDateString();
-      const todayEntry = safeHistory.find(entry => 
+      const todayEntry = safeHistory.find((entry) =>
         isSameEntryDate(entry.date, todayDate)
       );
 
-      setEntries(prev => 
-        prev.map(defaultItem => {
-          const savedItem = todayEntry?.schedule?.find(s => 
-            s.time === defaultItem.time && 
-            s.activity === defaultItem.activity
+      setEntries((prev) =>
+        prev.map((defaultItem) => {
+          const savedItem = todayEntry?.schedule?.find(
+            (s) =>
+              s.time === defaultItem.time && s.activity === defaultItem.activity
           );
           return savedItem ? { ...defaultItem, ...savedItem } : defaultItem;
         })
       );
 
-      setHistory(safeHistory.filter(entry => 
-        !isSameEntryDate(entry.date, todayDate)
-      ));
+      setHistory(
+        safeHistory.filter((entry) => !isSameEntryDate(entry.date, todayDate))
+      );
       setLoading(false);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
       setLoading(false);
     }
   };
@@ -199,20 +212,20 @@ export default function Home() {
   const handleCheckboxChange = (index) => {
     const newEntries = [...entries];
     const wasChecked = newEntries[index].checked;
-    
+
     if (!wasChecked) {
       if (!newEntries[index].notes.trim()) {
-        setValidationError('Please add notes before checking this item');
+        setValidationError("Please add notes before checking this item");
         return;
       }
       newEntries[index].timestamp = new Date().toISOString();
     } else {
       newEntries[index].timestamp = null;
     }
-    
+
     newEntries[index].checked = !wasChecked;
     setEntries(newEntries);
-    setValidationError('');
+    setValidationError("");
   };
 
   const handleNotesChange = (index, value) => {
@@ -225,33 +238,33 @@ export default function Home() {
     try {
       setSaveAttempted(true);
       const entryDate = getLocalDateString();
-      
+
       const entry = {
         date: entryDate,
-        schedule: entries.map(item => ({
+        schedule: entries.map((item) => ({
           time: item.time,
           activity: item.activity,
           diet: item.diet,
           checked: item.checked,
           timestamp: item.timestamp,
-          notes: item.notes
-        }))
+          notes: item.notes,
+        })),
       };
 
       const response = await fetch(`/api/users/${currentUser}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry),
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Save failed');
-      
+      if (!response.ok) throw new Error(result.error || "Save failed");
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       loadUserData(currentUser);
     } catch (error) {
-      console.error('Submission error:', error);
+      console.error("Submission error:", error);
       alert(`Save failed: ${error.message}`);
     } finally {
       setSaveAttempted(false);
@@ -259,8 +272,9 @@ export default function Home() {
   };
 
   const logout = () => {
-    document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    window.location.href = '/login';
+    document.cookie =
+      "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    window.location.href = "/login";
   };
 
   if (loading) {
@@ -282,24 +296,24 @@ export default function Home() {
                 {currentUser}
               </span>
               <h1 className="text-xl font-bold text-white">
-                {format(new Date(), 'EEE, MMM d')}
+                {format(new Date(), "EEE, MMM d")}
               </h1>
             </div>
             <button
               onClick={logout}
               className="rounded-lg p-2 text-primary-100 hover:bg-primary-700"
             >
-              <svg 
-                className="h-6 w-6" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                 />
               </svg>
             </button>
@@ -337,7 +351,7 @@ export default function Home() {
                     </span>
                     {item.timestamp && (
                       <span className="text-sm text-primary-600">
-                        {format(new Date(item.timestamp), 'hh:mm a')}
+                        {format(new Date(item.timestamp), "hh:mm a")}
                       </span>
                     )}
                   </div>
@@ -354,9 +368,15 @@ export default function Home() {
                       </div>
                       <textarea
                         value={item.notes}
-                        onChange={(e) => handleNotesChange(index, e.target.value)}
-                        className="mt-2 w-full rounded-lg border border-gray-200 p-2 text-sm focus:border-primary-500 focus:ring-primary-500"
-                        placeholder={item.activity === 'Weight Check' ? 'Enter weight...' : 'Add notes (required for completion)...'}
+                        onChange={(e) =>
+                          handleNotesChange(index, e.target.value)
+                        }
+                        className={`mt-2 w-full rounded-lg border p-2 text-sm focus:ring-primary-500 ${
+                          item.checked && !item.notes.trim()
+                            ? "border-red-300"
+                            : "border-gray-200"
+                        }`}
+                        placeholder={item.placeholder}
                         rows={3}
                         required
                       />
@@ -374,12 +394,14 @@ export default function Home() {
           disabled={saveAttempted}
           className="mt-8 w-full rounded-xl bg-primary-600 py-4 px-6 text-lg font-semibold text-white shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saveAttempted ? 'Saving...' : 'Save Progress'}
+          {saveAttempted ? "Saving..." : "Save Progress"}
         </button>
 
         {/* Health Protocol */}
         <div className="mt-8 rounded-xl bg-white p-6 shadow-md">
-          <h3 className="text-xl font-bold text-primary-800 mb-4">Daily Health Rules</h3>
+          <h3 className="text-xl font-bold text-primary-800 mb-4">
+            Daily Health Rules
+          </h3>
           <div className="grid gap-4 md:grid-cols-2">
             {healthProtocols.map((protocol, index) => (
               <div key={index} className="flex items-start gap-3">
@@ -395,15 +417,15 @@ export default function Home() {
           <h2 className="text-xl font-bold text-primary-800 mb-4">History</h2>
           <div className="space-y-3">
             {history.map((entry, index) => {
-              const [day, month, year] = entry.date.split('-');
+              const [day, month, year] = entry.date.split("-");
               const isoDate = `${year}-${month}-${day}`;
-              
+
               return (
                 <div key={index} className="rounded-lg bg-white p-4 shadow-sm">
                   <details className="group">
                     <summary className="flex justify-between items-center cursor-pointer">
                       <span className="font-medium text-primary-800">
-                        {format(parseISO(isoDate), 'MMMM do, yyyy')}
+                        {format(parseISO(isoDate), "MMMM do, yyyy")}
                       </span>
                       <span className="text-primary-600 transform transition-transform group-open:-rotate-180">
                         ▼
@@ -411,23 +433,38 @@ export default function Home() {
                     </summary>
                     <div className="mt-4 space-y-2">
                       {entry.schedule?.map((item, idx) => (
-                        <div key={idx} className="flex flex-col gap-2 p-2 hover:bg-gray-50 rounded">
+                        <div
+                          key={idx}
+                          className="flex flex-col gap-2 p-2 hover:bg-gray-50 rounded"
+                        >
                           <div className="flex items-center gap-4">
-                            <span className={`h-4 w-4 rounded-full ${item.checked ? 'bg-green-500' : 'bg-gray-200'}`} />
+                            <span
+                              className={`h-4 w-4 rounded-full ${
+                                item.checked ? "bg-green-500" : "bg-gray-200"
+                              }`}
+                            />
                             <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">{item.time}</p>
-                              <p className="text-sm text-gray-600">{item.activity}</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {item.time}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {item.activity}
+                              </p>
                             </div>
                             {item.checked && item.timestamp && (
                               <span className="text-xs text-gray-500">
-                                {format(new Date(item.timestamp), 'hh:mm a')}
+                                {format(new Date(item.timestamp), "hh:mm a")}
                               </span>
                             )}
                           </div>
                           {item.checked && item.notes && (
                             <div className="ml-8 p-2 bg-gray-50 rounded">
-                              <p className="text-sm text-gray-700 font-medium">Notes:</p>
-                              <p className="text-sm text-gray-600 whitespace-pre-line">{item.notes}</p>
+                              <p className="text-sm text-gray-700 font-medium">
+                                Notes:
+                              </p>
+                              <p className="text-sm text-gray-600 whitespace-pre-line">
+                                {item.notes}
+                              </p>
                             </div>
                           )}
                         </div>
@@ -445,7 +482,11 @@ export default function Home() {
       {showSuccess && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-50 text-green-700 px-6 py-3 rounded-lg shadow-md flex items-center space-x-2 animate-slide-up">
           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
           </svg>
           <span>Progress saved successfully!</span>
         </div>
