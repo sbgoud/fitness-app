@@ -105,6 +105,13 @@ Non-Veg Options: Chicken, Fish, Eggs`,
   }
 ];
 
+const healthProtocols = [
+  { emoji: '💧', text: 'Drink 3L Water with Chia seeds/Sabja Ginjalu daily' },
+  { emoji: '📵', text: 'No mobile usage after 9PM' },
+  { emoji: '⏰', text: 'Maintain 10PM bedtime consistently' },
+  { emoji: '👩🍳', text: 'Prepare all meals independently' },
+];
+
 const getLocalDateString = () => {
   try {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
@@ -240,183 +247,157 @@ export default function Home() {
     }
   };
 
+  const logout = () => {
+    document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    window.location.href = '/login';
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-primary-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
-
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8 p-6 bg-blue-50 rounded-lg shadow-md border border-blue-100">
-          <div className="flex items-center space-x-4">
-            <span className="font-medium bg-blue-100 px-4 py-2 rounded-full text-blue-800 text-sm">
-              {currentUser}
-            </span>
-            <h1 className="text-2xl font-bold text-blue-800">
-              {format(new Date(), 'EEEE, MMMM do')} Schedule
-            </h1>
-          </div>
-          <button
-            onClick={() => {
-              document.cookie = 'currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-              window.location.href = '/login';
-            }}
-            className="text-blue-800 hover:text-blue-900 font-medium px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-
-        {showSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-lg">
-            <div className="flex items-center">
-              <span className="text-green-600">✓</span>
-              <p className="ml-2 text-green-700 font-medium">
-                Progress saved successfully! You can continue editing.
-              </p>
+    <div className="min-h-screen pb-8">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-primary-700 to-primary-600 shadow-lg">
+        <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <span className="rounded-full bg-primary-100 px-3 py-1.5 text-sm font-medium text-primary-800">
+                {currentUser}
+              </span>
+              <h1 className="text-xl font-bold text-white">
+                {format(new Date(), 'EEE, MMM d')}
+              </h1>
             </div>
-          </div>
-        )}
-
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-          <table className="w-full">
-            <thead className="bg-blue-50">
-              <tr>
-                <th className="p-4 text-center w-32 text-blue-800 font-semibold">Status</th>
-                <th className="p-4 text-left w-40 text-blue-800 font-semibold">Time</th>
-                <th className="p-4 text-left w-48 text-blue-800 font-semibold">Activity</th>
-                <th className="p-4 text-left text-blue-800 font-semibold">Diet Plan</th>
-                <th className="p-4 text-left w-64 text-blue-800 font-semibold">Notes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {entries.map((item, index) => (
-                <tr key={index} className="hover:bg-blue-50 transition-colors">
-                  <td className="p-4 text-center">
-                    <div className="flex flex-col items-center space-y-1">
-                      <input
-                        type="checkbox"
-                        checked={item.checked}
-                        onChange={() => handleCheckboxChange(index)}
-                        className="w-5 h-5 text-blue-600 border-2 border-gray-200 rounded focus:ring-blue-500"
-                      />
-                      {item.timestamp && (
-                        <span className="text-xs text-gray-500">
-                          {format(new Date(item.timestamp), 'hh:mm a')}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-4 font-medium text-gray-700">{item.time}</td>
-                  <td className="p-4 text-gray-600">{item.activity}</td>
-                  <td className="p-4 text-gray-600 whitespace-pre-line">{item.diet}</td>
-                  <td className="p-4">
-                    <textarea
-                      value={item.notes}
-                      onChange={(e) => handleNotesChange(index, e.target.value)}
-                      className="w-full h-20 p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      placeholder={item.activity === 'Weight Check' ? 'Enter today\'s weight' : 'Add notes...'}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={handleSubmit}
-            disabled={saveAttempted}
-            className={`bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-lg transition-colors flex items-center shadow-md hover:shadow-lg ${
-              saveAttempted ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            {saveAttempted ? 'Saving...' : 'Save Daily Progress'}
-            <svg
-              className="ml-2 w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <button
+              onClick={logout}
+              className="rounded-lg p-2 text-primary-100 hover:bg-primary-700"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </button>
+              <svg 
+                className="h-6 w-6" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
+        {/* Schedule Items */}
+        <div className="space-y-4">
+          {entries.map((item, index) => (
+            <div key={index} className="rounded-xl bg-white p-4 shadow-md">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={() => handleCheckboxChange(index)}
+                    className="h-6 w-6 rounded-full border-2 border-primary-200 text-primary-600 focus:ring-primary-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-lg font-semibold text-gray-900">
+                      {item.time}
+                    </span>
+                    {item.timestamp && (
+                      <span className="text-sm text-primary-600">
+                        {format(new Date(item.timestamp), 'hh:mm a')}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="mt-1 text-base font-medium text-primary-800">
+                    {item.activity}
+                  </h3>
+                  <details className="mt-2">
+                    <summary className="text-sm text-gray-600 cursor-pointer hover:text-primary-600">
+                      View Details
+                    </summary>
+                    <div className="mt-2 space-y-2">
+                      <div className="prose prose-sm text-gray-600 whitespace-pre-line">
+                        {item.diet}
+                      </div>
+                      <textarea
+                        value={item.notes}
+                        onChange={(e) => handleNotesChange(index, e.target.value)}
+                        className="mt-2 w-full rounded-lg border border-gray-200 p-2 text-sm focus:border-primary-500 focus:ring-primary-500"
+                        placeholder={item.activity === 'Weight Check' ? 'Enter weight...' : 'Add notes...'}
+                        rows={3}
+                      />
+                    </div>
+                  </details>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-8 bg-blue-50 rounded-xl p-6 shadow-sm border border-blue-100">
-          <h3 className="text-lg font-semibold text-blue-800 mb-4">Health Protocol</h3>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-blue-700">
-            <li className="flex items-center space-x-2">
-              <span>🚰</span>
-              <span>Drink 3L Water with Chia seeds/Sabja Ginjalu daily</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <span>📵</span>
-              <span>No mobile usage after 9PM</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <span>⏰</span>
-              <span>Maintain 10PM bedtime consistently</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <span>👩🍳</span>
-              <span>Prepare all meals independently</span>
-            </li>
-          </ul>
+        {/* Save Button */}
+        <button
+          onClick={handleSubmit}
+          disabled={saveAttempted}
+          className="mt-8 w-full rounded-xl bg-primary-600 py-4 px-6 text-lg font-semibold text-white shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saveAttempted ? 'Saving...' : 'Save Progress'}
+        </button>
+
+        {/* Health Protocol */}
+        <div className="mt-8 rounded-xl bg-white p-6 shadow-md">
+          <h3 className="text-xl font-bold text-primary-800 mb-4">Daily Health Rules</h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            {healthProtocols.map((protocol, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <span className="shrink-0 text-2xl">{protocol.emoji}</span>
+                <p className="text-sm text-gray-700">{protocol.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="mt-12">
-          <h2 className="text-xl font-semibold text-blue-800 mb-6">Previous Entries</h2>
-          <div className="space-y-4">
+        {/* History Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-primary-800 mb-4">History</h2>
+          <div className="space-y-3">
             {history.map((entry, index) => {
-              // Safely convert DD-MM-YYYY to ISO format
               const [day, month, year] = entry.date.split('-');
               const isoDate = `${year}-${month}-${day}`;
               
               return (
-                <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+                <div key={index} className="rounded-lg bg-white p-4 shadow-sm">
                   <details className="group">
-                    <summary className="flex justify-between items-center px-6 py-4 bg-blue-50 hover:bg-blue-100 cursor-pointer">
-                      <span className="font-medium text-blue-800">
+                    <summary className="flex justify-between items-center cursor-pointer">
+                      <span className="font-medium text-primary-800">
                         {format(parseISO(isoDate), 'MMMM do, yyyy')}
                       </span>
-                      <span className="transform transition-transform group-open:-rotate-180 text-blue-600">
+                      <span className="text-primary-600 transform transition-transform group-open:-rotate-180">
                         ▼
                       </span>
                     </summary>
-                    <div className="p-6">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <table className="w-full">
-                          <tbody className="divide-y divide-gray-200">
-                            {entry.schedule?.map((item, idx) => (
-                              <tr key={idx} className="hover:bg-gray-100">
-                                <td className="p-3 w-32 text-center">
-                                  {item.checked ? (
-                                    <span className="text-green-600 text-sm">✓</span>
-                                  ) : (
-                                    <span className="text-gray-400 text-sm">◯</span>
-                                  )}
-                                </td>
-                                <td className="p-3 text-gray-600 text-sm w-40">{item.time}</td>
-                                <td className="p-3 text-gray-600 text-sm">{item.activity}</td>
-                                <td className="p-3 text-gray-500 text-sm max-w-xs">
-                                  {item.notes || 'No notes'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                    <div className="mt-4 space-y-2">
+                      {entry.schedule?.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-4 p-2 hover:bg-gray-50 rounded">
+                          <span className={`h-4 w-4 rounded-full ${item.checked ? 'bg-green-500' : 'bg-gray-200'}`} />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{item.time}</p>
+                            <p className="text-sm text-gray-600">{item.activity}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </details>
                 </div>
@@ -425,6 +406,16 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Success Notification */}
+      {showSuccess && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-50 text-green-700 px-6 py-3 rounded-lg shadow-md flex items-center space-x-2 animate-slide-up">
+          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          <span>Progress saved successfully!</span>
+        </div>
+      )}
     </div>
   );
 }
