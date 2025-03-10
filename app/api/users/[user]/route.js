@@ -14,7 +14,7 @@ export async function POST(request, { params }) {
   const { user } = params;
   const body = await request.json();
 
-  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44'].includes(user)) {
+  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44', 'Tirumala1234'].includes(user)) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
 
@@ -53,7 +53,7 @@ export async function POST(request, { params }) {
 export async function GET(request, { params }) {
   const { user } = params;
 
-  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44'].includes(user)) {
+  if (!['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd44', 'Tirumala1234'].includes(user)) {
     return Response.json({ history: [] });
   }
 
