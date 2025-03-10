@@ -275,7 +275,7 @@ export default function Home() {
     setCurrentUser = '';
     document.cookie =
       "currentUser=''; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    window.location.href = "/login";
+    window.location.href = "https://fitnessbysbgoud.vercel.app/logout";
   };
 
   if (loading) {
