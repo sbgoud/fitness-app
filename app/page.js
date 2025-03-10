@@ -293,7 +293,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <span className="rounded-full bg-primary-100 px-3 py-1.5 text-sm font-medium text-primary-800">
-                {currentUser}
+                {currentUser.slice(0, -4).toUpperCase()}
               </span>
               <h1 className="text-xl font-bold text-white">
                 {format(new Date(), "EEE, MMM d")}
