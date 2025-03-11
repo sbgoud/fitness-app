@@ -307,6 +307,15 @@ export default function Home() {
     );
   }
 
+  const sortedHistory = history.slice().sort((a, b) => {
+    const [dayA, monthA, yearA] = a.date.split("-").map(Number);
+    const [dayB, monthB, yearB] = b.date.split("-").map(Number);
+    const dateA = new Date(yearA, monthA - 1, dayA);
+    const dateB = new Date(yearB, monthB - 1, dayB);
+    return dateB - dateA; // Descending order for all history entries
+  });
+
+
   return (
     <div className="min-h-screen pb-8">
       {/* Header */}
@@ -438,7 +447,11 @@ export default function Home() {
         <div className="mt-8">
           <h2 className="text-xl font-bold text-primary-800 mb-4">History</h2>
           <div className="space-y-3">
-            {history.map((entry, index) => {
+            {
+            
+            
+            
+            sortedHistory.map((entry, index) => {
               const [day, month, year] = entry.date.split("-");
               const isoDate = `${year}-${month}-${day}`;
 
