@@ -262,7 +262,7 @@ export default function Home() {
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      loadUserData(currentUser);
+      
     } catch (error) {
       console.error("Submission error:", error);
       alert(`Save failed: ${error.message}`);
