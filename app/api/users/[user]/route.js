@@ -21,6 +21,7 @@ export async function POST(request, { params }) {
     "Sweety5031",
     "Sindhu8457",
     "Ravinder1294",
+    "Swaroopa1234",
     "Thirumala3768" ].includes(user)) {
     return Response.json({ error: 'Invalid user' }, { status: 400 });
   }
@@ -67,6 +68,7 @@ export async function GET(request, { params }) {
     "Sweety5031",
     "Sindhu8457",
     "Ravinder1294",
+    "Swaroopa1234",
     "Thirumala3768" ].includes(user)) {
     return Response.json({ history: [] });
   }
