@@ -164,17 +164,10 @@ export default function Home() {
   const [validationError, setValidationError] = useState("");
   const [latestWeight, setLatestWeight] = useState(null);
 
-  const getLatestWeight = (history) => {
-    const weights = [];
-    history.forEach(entry => {
-      entry.schedule?.forEach(item => {
-        if (item.activity === "Weight Check and sleep" && item.notes) {
-          const weightMatch = item.notes.match(/\d+(\.\d+)?/);
-          if (weightMatch) weights.push(parseFloat(weightMatch[0]));
-        }
-      });
-    });
-    return weights.length > 0 ? Math.max(...weights) : null;
+  const extractWeight = (notes) => {
+    if (!notes) return null;
+    const weightMatch = notes.match(/\d+(\.\d+)?/);
+    return weightMatch ? parseFloat(weightMatch[0]) : null;
   };
 
   useEffect(() => {
@@ -184,19 +177,34 @@ export default function Home() {
       ?.split("=")[1];
 
     if (!userCookie) {
-      router.push("/login");
-    } else {
-      setCurrentUser(userCookie);
-      loadUserData(userCookie);
+      router.replace("/login");
+      return;
     }
+
+    const verifyUser = async () => {
+      try {
+        const res = await fetch(`/api/users/${userCookie}`);
+        if (res.status === 401) throw new Error("Unauthorized");
+        
+        setCurrentUser(userCookie);
+        loadUserData(userCookie);
+      } catch (error) {
+        document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        router.replace("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyUser();
   }, [router]);
 
   const loadUserData = async (user) => {
     try {
       const res = await fetch(`/api/users/${user}`);
       if (!res.ok) throw new Error("Failed to fetch data");
+      
       const data = await res.json();
-
       const safeHistory = Array.isArray(data?.history) ? data.history : [];
       const todayDate = getLocalDateString();
       const todayEntry = safeHistory.find((entry) =>
@@ -213,14 +221,17 @@ export default function Home() {
         })
       );
 
+      const weightEntry = todayEntry?.schedule?.find(
+        (item) => item.activity === "Weight Check and sleep"
+      );
+      setLatestWeight(extractWeight(weightEntry?.notes));
+
       setHistory(
         safeHistory.filter((entry) => !isSameEntryDate(entry.date, todayDate))
       );
-      setLatestWeight(getLatestWeight(safeHistory));
-      setLoading(false);
     } catch (error) {
       console.error("Error loading data:", error);
-      setLoading(false);
+      throw error;
     }
   };
 
@@ -246,6 +257,11 @@ export default function Home() {
   const handleNotesChange = (index, value) => {
     const newEntries = [...entries];
     newEntries[index].notes = value;
+    
+    if (newEntries[index].activity === "Weight Check and sleep") {
+      setLatestWeight(extractWeight(value));
+    }
+    
     setEntries(newEntries);
   };
 
@@ -272,8 +288,7 @@ export default function Home() {
         body: JSON.stringify(entry),
       });
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Save failed");
+      if (!response.ok) throw new Error("Save failed");
 
       setHistory(prev => {
         const filtered = prev.filter(entry => !isSameEntryDate(entry.date, entryDate));
@@ -282,14 +297,6 @@ export default function Home() {
       
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      
-      const newWeightEntry = entry.schedule.find(item => 
-        item.activity === "Weight Check and sleep" && item.notes
-      );
-      if (newWeightEntry) {
-        const weightMatch = newWeightEntry.notes.match(/\d+(\.\d+)?/);
-        if (weightMatch) setLatestWeight(parseFloat(weightMatch[0]));
-      }
 
     } catch (error) {
       console.error("Submission error:", error);
@@ -300,21 +307,9 @@ export default function Home() {
   };
 
   const logout = () => {
-    if (typeof setCurrentUser === "function") {
-      setCurrentUser(null);
-    }
-    localStorage.removeItem("currentUser");
-    sessionStorage.removeItem("currentUser");
-    document.cookie =
-      "currentUser=; path=/; domain=" +
-      window.location.hostname +
-      "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    document.cookie.split(";").forEach((c) => {
-      document.cookie = c
-        .replace(/^ +/, "")
-        .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/");
-    });
-    window.location.href = "https://fitnessbysbgoud.vercel.app/login";
+    document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    setCurrentUser("");
+    router.replace("/login");
   };
 
   if (loading) {
@@ -323,6 +318,10 @@ export default function Home() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
+  }
+
+  if (!currentUser) {
+    return null;
   }
 
   const sortedHistory = history.slice().sort((a, b) => {
@@ -356,7 +355,7 @@ export default function Home() {
             </div>
             <button
               onClick={logout}
-              className="rounded-lg p-2 text-primary-100 hover:bg-primary-700 flex items-center space-x-2"
+              className="rounded-lg p-2 text-primary-100 hover:bg-primary-700"
             >
               <svg
                 className="h-6 w-6"
