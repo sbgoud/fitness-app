@@ -162,6 +162,34 @@ export default function Home() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [saveAttempted, setSaveAttempted] = useState(false);
   const [validationError, setValidationError] = useState("");
+  const [latestWeight, setLatestWeight] = useState(null);
+
+  const extractWeight = (notes) => {
+    if (!notes) return null;
+    const weightMatch = notes.match(/\d+(\.\d+)?/);
+    return weightMatch ? parseFloat(weightMatch[0]) : null;
+  };
+
+  const getLatestWeight = (entries, history) => {
+    // Check current entries first
+    const currentWeightEntry = entries.find(
+      (item) => item.activity === "Weight Check and sleep"
+    );
+    const currentWeight = extractWeight(currentWeightEntry?.notes);
+    if (currentWeight) return currentWeight;
+
+    // Check historical entries
+    const allEntries = history.flatMap((entry) => entry.schedule);
+    const weightEntries = allEntries.filter(
+      (item) => item.activity === "Weight Check and sleep"
+    );
+    
+    const weights = weightEntries
+      .map((item) => extractWeight(item.notes))
+      .filter((weight) => weight !== null);
+    
+    return weights.length > 0 ? Math.max(...weights) : null;
+  };
 
   useEffect(() => {
     const userCookie = document.cookie
@@ -170,42 +198,54 @@ export default function Home() {
       ?.split("=")[1];
 
     if (!userCookie) {
-      router.push("/login");
-    } else {
-      setCurrentUser(userCookie);
-      loadUserData(userCookie);
+      router.replace("/login");
+      return;
     }
+
+    const verifyUser = async () => {
+      try {
+        const res = await fetch(`/api/users/${userCookie}`);
+        if (res.status === 401) throw new Error("Unauthorized");
+        
+        setCurrentUser(userCookie);
+        loadUserData(userCookie);
+      } catch (error) {
+        document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        router.replace("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyUser();
   }, [router]);
 
   const loadUserData = async (user) => {
     try {
       const res = await fetch(`/api/users/${user}`);
       if (!res.ok) throw new Error("Failed to fetch data");
+      
       const data = await res.json();
-
       const safeHistory = Array.isArray(data?.history) ? data.history : [];
       const todayDate = getLocalDateString();
       const todayEntry = safeHistory.find((entry) =>
         isSameEntryDate(entry.date, todayDate)
       );
 
-      setEntries((prev) =>
-        prev.map((defaultItem) => {
-          const savedItem = todayEntry?.schedule?.find(
-            (s) =>
-              s.time === defaultItem.time && s.activity === defaultItem.activity
-          );
-          return savedItem ? { ...defaultItem, ...savedItem } : defaultItem;
-        })
-      );
+      const updatedEntries = entries.map((defaultItem) => {
+        const savedItem = todayEntry?.schedule?.find(
+          (s) =>
+            s.time === defaultItem.time && s.activity === defaultItem.activity
+        );
+        return savedItem ? { ...defaultItem, ...savedItem } : defaultItem;
+      });
 
-      setHistory(
-        safeHistory.filter((entry) => !isSameEntryDate(entry.date, todayDate))
-      );
-      setLoading(false);
+      setEntries(updatedEntries);
+      setLatestWeight(getLatestWeight(updatedEntries, safeHistory));
+      setHistory(safeHistory.filter((entry) => !isSameEntryDate(entry.date, todayDate)));
     } catch (error) {
       console.error("Error loading data:", error);
-      setLoading(false);
+      throw error;
     }
   };
 
@@ -231,6 +271,11 @@ export default function Home() {
   const handleNotesChange = (index, value) => {
     const newEntries = [...entries];
     newEntries[index].notes = value;
+    
+    if (newEntries[index].activity === "Weight Check and sleep") {
+      setLatestWeight(extractWeight(value));
+    }
+    
     setEntries(newEntries);
   };
 
@@ -257,12 +302,17 @@ export default function Home() {
         body: JSON.stringify(entry),
       });
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Save failed");
+      if (!response.ok) throw new Error("Save failed");
 
+      setHistory(prev => {
+        const filtered = prev.filter(entry => !isSameEntryDate(entry.date, entryDate));
+        return [...filtered, entry];
+      });
+      
+      setLatestWeight(getLatestWeight(entries, [...history, entry]));
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      loadUserData(currentUser);
+
     } catch (error) {
       console.error("Submission error:", error);
       alert(`Save failed: ${error.message}`);
@@ -272,32 +322,10 @@ export default function Home() {
   };
 
   const logout = () => {
-    // Ensure state is cleared (if using useState)
-    if (typeof setCurrentUser === "function") {
-      setCurrentUser(null); // Correct way to update state
-    }
-  
-    // Remove user data from localStorage and sessionStorage
-    localStorage.removeItem("currentUser");
-    sessionStorage.removeItem("currentUser");
-  
-    // Delete authentication cookies properly
-    document.cookie =
-      "currentUser=; path=/; domain=" +
-      window.location.hostname +
-      "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-  
-    // Optional: Clear all cookies (for a full logout)
-    document.cookie.split(";").forEach((c) => {
-      document.cookie = c
-        .replace(/^ +/, "")
-        .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/");
-    });
-  
-    // Redirect user to login page
-    window.location.href = "https://fitnessbysbgoud.vercel.app/login";
+    document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    setCurrentUser("");
+    router.replace("/login");
   };
-  
 
   if (loading) {
     return (
@@ -307,18 +335,20 @@ export default function Home() {
     );
   }
 
+  if (!currentUser) {
+    return null;
+  }
+
   const sortedHistory = history.slice().sort((a, b) => {
     const [dayA, monthA, yearA] = a.date.split("-").map(Number);
     const [dayB, monthB, yearB] = b.date.split("-").map(Number);
     const dateA = new Date(yearA, monthA - 1, dayA);
     const dateB = new Date(yearB, monthB - 1, dayB);
-    return dateB - dateA; // Descending order for all history entries
+    return dateB - dateA;
   });
-
 
   return (
     <div className="min-h-screen pb-8">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-gradient-to-b from-primary-700 to-primary-600 shadow-lg">
         <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between">
@@ -329,6 +359,12 @@ export default function Home() {
               <h1 className="text-xl font-bold text-white">
                 {format(new Date(), "EEE, MMM d")}
               </h1>
+              <div className="ml-4 flex items-center space-x-2">
+                <span className="text-white text-sm font-medium">Weight:</span>
+                <span className="bg-primary-800 text-white px-2 py-1 rounded-lg text-sm">
+                  {latestWeight ? `${latestWeight} kg` : "N/A"}
+                </span>
+              </div>
             </div>
             <button
               onClick={logout}
@@ -360,9 +396,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Content */}
       <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
-        {/* Schedule Items */}
         <div className="space-y-4">
           {entries.map((item, index) => (
             <div key={index} className="rounded-xl bg-white p-4 shadow-md">
@@ -419,7 +453,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Save Button */}
         <button
           onClick={handleSubmit}
           disabled={saveAttempted}
@@ -428,7 +461,6 @@ export default function Home() {
           {saveAttempted ? "Saving..." : "Save Progress"}
         </button>
 
-        {/* Health Protocol */}
         <div className="mt-8 rounded-xl bg-white p-6 shadow-md">
           <h3 className="text-xl font-bold text-primary-800 mb-4">
             Daily Health Rules
@@ -443,15 +475,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* History Section */}
         <div className="mt-8">
           <h2 className="text-xl font-bold text-primary-800 mb-4">History</h2>
           <div className="space-y-3">
-            {
-            
-            
-            
-            sortedHistory.map((entry, index) => {
+            {sortedHistory.map((entry, index) => {
               const [day, month, year] = entry.date.split("-");
               const isoDate = `${year}-${month}-${day}`;
 
@@ -513,7 +540,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Success Notification */}
       {showSuccess && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-50 text-green-700 px-6 py-3 rounded-lg shadow-md flex items-center space-x-2 animate-slide-up">
           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
