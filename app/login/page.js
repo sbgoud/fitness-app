@@ -177,6 +177,7 @@ export default function Home() {
       ?.split("=")[1];
 
     if (!userCookie) {
+      setLoading(false);
       router.push("/login");
     } else {
       setCurrentUser(userCookie);
@@ -187,9 +188,17 @@ export default function Home() {
   const loadUserData = async (user) => {
     try {
       const res = await fetch(`/api/users/${user}`);
+      
+      if (res.status === 401) {
+        document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        setLoading(false);
+        router.push("/login");
+        return;
+      }
+      
       if (!res.ok) throw new Error("Failed to fetch data");
+      
       const data = await res.json();
-
       const safeHistory = Array.isArray(data?.history) ? data.history : [];
       const todayDate = getLocalDateString();
       const todayEntry = safeHistory.find((entry) =>
@@ -218,6 +227,7 @@ export default function Home() {
     } catch (error) {
       console.error("Error loading data:", error);
       setLoading(false);
+      router.push("/login");
     }
   };
 
@@ -274,8 +284,7 @@ export default function Home() {
         body: JSON.stringify(entry),
       });
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Save failed");
+      if (!response.ok) throw new Error("Save failed");
 
       setHistory(prev => {
         const filtered = prev.filter(entry => !isSameEntryDate(entry.date, entryDate));
