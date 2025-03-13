@@ -170,6 +170,27 @@ export default function Home() {
     return weightMatch ? parseFloat(weightMatch[0]) : null;
   };
 
+  const getLatestWeight = (entries, history) => {
+    // Check current entries first
+    const currentWeightEntry = entries.find(
+      (item) => item.activity === "Weight Check and sleep"
+    );
+    const currentWeight = extractWeight(currentWeightEntry?.notes);
+    if (currentWeight) return currentWeight;
+
+    // Check historical entries
+    const allEntries = history.flatMap((entry) => entry.schedule);
+    const weightEntries = allEntries.filter(
+      (item) => item.activity === "Weight Check and sleep"
+    );
+    
+    const weights = weightEntries
+      .map((item) => extractWeight(item.notes))
+      .filter((weight) => weight !== null);
+    
+    return weights.length > 0 ? Math.max(...weights) : null;
+  };
+
   useEffect(() => {
     const userCookie = document.cookie
       .split("; ")
@@ -211,24 +232,17 @@ export default function Home() {
         isSameEntryDate(entry.date, todayDate)
       );
 
-      setEntries((prev) =>
-        prev.map((defaultItem) => {
-          const savedItem = todayEntry?.schedule?.find(
-            (s) =>
-              s.time === defaultItem.time && s.activity === defaultItem.activity
-          );
-          return savedItem ? { ...defaultItem, ...savedItem } : defaultItem;
-        })
-      );
+      const updatedEntries = entries.map((defaultItem) => {
+        const savedItem = todayEntry?.schedule?.find(
+          (s) =>
+            s.time === defaultItem.time && s.activity === defaultItem.activity
+        );
+        return savedItem ? { ...defaultItem, ...savedItem } : defaultItem;
+      });
 
-      const weightEntry = todayEntry?.schedule?.find(
-        (item) => item.activity === "Weight Check and sleep"
-      );
-      setLatestWeight(extractWeight(weightEntry?.notes));
-
-      setHistory(
-        safeHistory.filter((entry) => !isSameEntryDate(entry.date, todayDate))
-      );
+      setEntries(updatedEntries);
+      setLatestWeight(getLatestWeight(updatedEntries, safeHistory));
+      setHistory(safeHistory.filter((entry) => !isSameEntryDate(entry.date, todayDate)));
     } catch (error) {
       console.error("Error loading data:", error);
       throw error;
@@ -295,6 +309,7 @@ export default function Home() {
         return [...filtered, entry];
       });
       
+      setLatestWeight(getLatestWeight(entries, [...history, entry]));
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
 
@@ -344,14 +359,12 @@ export default function Home() {
               <h1 className="text-xl font-bold text-white">
                 {format(new Date(), "EEE, MMM d")}
               </h1>
-              {latestWeight && (
-                <div className="ml-4 flex items-center space-x-2">
-                  <span className="text-white text-sm font-medium">Weight:</span>
-                  <span className="bg-primary-800 text-white px-2 py-1 rounded-lg text-sm">
-                    {latestWeight} kg
-                  </span>
-                </div>
-              )}
+              <div className="ml-4 flex items-center space-x-2">
+                <span className="text-white text-sm font-medium">Weight:</span>
+                <span className="bg-primary-800 text-white px-2 py-1 rounded-lg text-sm">
+                  {latestWeight ? `${latestWeight} kg` : "N/A"}
+                </span>
+              </div>
             </div>
             <button
               onClick={logout}
