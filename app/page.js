@@ -414,7 +414,7 @@ export default function Home() {
                     ref={(el) => (detailsRefs.current[index] = el)}
                     className="mt-2 text-sm text-gray-300"
                   >
-                    <summary className="cursor-pointer hover:text-primary-400">Details</summary>
+                    <summary className="cursor-pointer hover:text-primary-400">Enter Details</summary>
                     <p className="mt-2 whitespace-pre-line">{item.diet}</p>
                     <textarea
                       value={item.notes}

@@ -18,15 +18,15 @@ const defaultUserData = {
   ccccc33: { age: 25, height: 180 },
   ddddd33: { age: 30, height: 175 },
   tirumala1234: { age: 27, height: 168 },
-  Chinni4823: { age: 29, height: 172 },
-  Laddu9372: { age: 31, height: 160 },
+  Chinni4823: { age: 29, height: 152 },
+  Laddu9372: { age: 23, height: 175 },
   Amruth2645: { age: 26, height: 178 },
-  Pandu7189: { age: 33, height: 169 },
+  Pandu7189: { age: 33, height: 167 },
   Sweety5031: { age: 22, height: 163 },
   Sindhu8457: { age: 35, height: 174 },
   Ravinder1294: { age: 28, height: 167 },
   Swaroopa1234: { age: 24, height: 171 },
-  Thirumala3768: { age: 32, height: 176 },
+  Thirumala3768: { age: 32, height: 152 },
 };
 
 export async function POST(request, { params }) {
