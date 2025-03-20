@@ -201,11 +201,13 @@ export default function Home() {
         const apiUrl = `/api/users/${userCookie}?t=${timestamp}`;
         const blobUrl = `https://jjat2xf6azudepf3.public.blob.vercel-storage.com/users/${userCookie}.json?t=${timestamp}`;
         
-        
+        // Try API route first
+        let res = await fetch(apiUrl, { cache: 'no-store' });
+        if (!res.ok) {
           // Fallback to direct Blob URL if API fails
           res = await fetch(blobUrl, { cache: 'no-store' });
           if (!res.ok) throw new Error("Failed to fetch data from both API and Blob");
-        
+        }
         
         const data = await res.json();
         setCurrentUser(userCookie);

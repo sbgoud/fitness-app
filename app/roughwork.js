@@ -196,14 +196,26 @@ export default function Home() {
 
     const verifyUser = async () => {
       try {
-        const res = await fetch(`/api/users/${userCookie}`, { cache: 'no-store' });
-        if (res.status === 401) throw new Error("Unauthorized");
+        // Use timestamp to bypass cache
+        const timestamp = Date.now();
+        const apiUrl = `/api/users/${userCookie}?t=${timestamp}`;
+        const blobUrl = `https://jjat2xf6azudepf3.public.blob.vercel-storage.com/users/${userCookie}.json?t=${timestamp}`;
+        
+        // Try API route first
+        let res = await fetch(apiUrl, { cache: 'no-store' });
+        if (!res.ok) {
+          // Fallback to direct Blob URL if API fails
+          res = await fetch(blobUrl, { cache: 'no-store' });
+          if (!res.ok) throw new Error("Failed to fetch data from both API and Blob");
+        }
+        
         const data = await res.json();
         setCurrentUser(userCookie);
-        setUserAge(data.age);
-        setUserHeight(data.height);
-        loadUserData(userCookie, data.history);
+        setUserAge(data.age || 0);
+        setUserHeight(data.height || 0);
+        loadUserData(userCookie, data.history || []);
       } catch (error) {
+        console.error("Fetch error:", error);
         document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         router.replace("/login");
       } finally {
@@ -247,6 +259,7 @@ export default function Home() {
     setEntries(newEntries);
     setValidationError("");
   };
+
   const handleNotesChange = (index, value) => {
     const newEntries = [...entries];
     newEntries[index].notes = value;
@@ -255,11 +268,11 @@ export default function Home() {
     }
     setEntries(newEntries);
   };
+
   const handleSubmit = async () => {
     try {
       setSaveAttempted(true);
       const entryDate = getLocalDateString();
-
       const entry = {
         date: entryDate,
         schedule: entries.map((item) => ({
@@ -280,15 +293,19 @@ export default function Home() {
 
       if (!response.ok) throw new Error("Save failed");
 
+      // Force reload fresh data after save
+      const timestamp = Date.now();
+      const blobUrl = `https://jjat2xf6azudepf3.public.blob.vercel-storage.com/users/${currentUser}.json?t=${timestamp}`;
+      const res = await fetch(blobUrl, { cache: 'no-store' });
+      const updatedData = await res.json();
+      
       setHistory(prev => {
         const filtered = prev.filter(entry => !isSameEntryDate(entry.date, entryDate));
         return [...filtered, entry];
       });
-      
-      setLatestWeight(getLatestWeight(entries, [...history, entry]));
+      setLatestWeight(getLatestWeight(entries, updatedData.history || []));
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-
     } catch (error) {
       console.error("Submission error:", error);
       alert(`Save failed: ${error.message}`);
@@ -296,6 +313,7 @@ export default function Home() {
       setSaveAttempted(false);
     }
   };
+
   const logout = () => {
     document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     setCurrentUser("");
@@ -316,7 +334,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-20 bg-gradient-to-r from-primary-700 to-primary-500 shadow-lg">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-extrabold tracking-tight">FitTrack Pro</h1>
@@ -334,15 +351,12 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="pt-20 pb-10 max-w-3xl mx-auto px-4">
-        {/* User Info */}
         <div className="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg">
           <h2 className="text-lg font-semibold">{currentUser.slice(0, -4).toUpperCase()}</h2>
           <p className="text-sm text-gray-400">{format(new Date(), "EEEE, MMMM d")}</p>
         </div>
 
-        {/* Schedule */}
         <section className="space-y-4">
           {entries.map((item, index) => (
             <div key={index} className="bg-gray-800 rounded-xl p-4 shadow-lg">
@@ -380,7 +394,6 @@ export default function Home() {
           ))}
         </section>
 
-        {/* Save Button */}
         <button
           onClick={handleSubmit}
           disabled={saveAttempted}
@@ -389,7 +402,6 @@ export default function Home() {
           {saveAttempted ? "Saving..." : "Save Progress"}
         </button>
 
-        {/* Health Rules */}
         <section className="mt-8 bg-gray-800 rounded-xl p-6 shadow-lg">
           <h3 className="text-xl font-bold text-primary-300 mb-4">Daily Health Rules</h3>
           <div className="grid gap-4">
@@ -402,7 +414,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* History */}
         <section className="mt-8">
           <h2 className="text-xl font-bold text-primary-300 mb-4">History</h2>
           <div className="space-y-3">
