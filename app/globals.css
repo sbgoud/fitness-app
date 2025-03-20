@@ -1,35 +1,34 @@
+/* app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #2a2525;
-  }
-}
-
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #111827; /* gray-900 */
+  color: #ffffff;
 }
 
-@keyframes slide-up {
-  from { transform: translateY(100%); opacity: 0 }
-  to { transform: translateY(0); opacity: 1 }
+header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 20;
 }
 
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
+main {
+  padding-top: 5rem; /* Space for fixed header */
+}
+
+textarea {
+  resize: none;
+}
+
+details summary::-webkit-details-marker {
+  color: #a78bfa; /* primary-400 */
+}
+
+details[open] summary span:last-child {
+  transform: rotate(180deg);
 }

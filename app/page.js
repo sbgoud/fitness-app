@@ -1,3 +1,4 @@
+// app/page.js
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -116,14 +117,12 @@ Non-Veg(only sunday) Options: Chicken, Fish, Eggs`,
     notes: "",
   },
 ];
-
 const healthProtocols = [
   { emoji: "💧", text: "Drink 3L Water with Chia seeds/Sabja Ginjalu daily" },
   { emoji: "📵", text: "No mobile usage after 9PM" },
   { emoji: "⏰", text: "Maintain 10PM bedtime consistently" },
   { emoji: "👩🍳", text: "Prepare all meals independently" },
 ];
-
 const getLocalDateString = () => {
   try {
     const timeZone =
@@ -150,7 +149,6 @@ const getLocalDateString = () => {
     ].join("-");
   }
 };
-
 const isSameEntryDate = (savedDate, incomingDate) => savedDate === incomingDate;
 
 export default function Home() {
@@ -163,6 +161,14 @@ export default function Home() {
   const [saveAttempted, setSaveAttempted] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [latestWeight, setLatestWeight] = useState(null);
+  const [userHeight, setUserHeight] = useState(0); // in cm
+  const [userAge, setUserAge] = useState(0);
+
+  const calculateBMI = (weight, height) => {
+    if (!weight || !height) return null;
+    const heightInMeters = height / 100;
+    return (weight / (heightInMeters * heightInMeters)).toFixed(1);
+  };
 
   const extractWeight = (notes) => {
     if (!notes) return null;
@@ -171,32 +177,18 @@ export default function Home() {
   };
 
   const getLatestWeight = (entries, history) => {
-    // Check current entries first
-    const currentWeightEntry = entries.find(
-      (item) => item.activity === "Weight Check and sleep"
-    );
+    const currentWeightEntry = entries.find((item) => item.activity === "Weight Check and sleep");
     const currentWeight = extractWeight(currentWeightEntry?.notes);
     if (currentWeight) return currentWeight;
 
-    // Check historical entries
     const allEntries = history.flatMap((entry) => entry.schedule);
-    const weightEntries = allEntries.filter(
-      (item) => item.activity === "Weight Check and sleep"
-    );
-    
-    const weights = weightEntries
-      .map((item) => extractWeight(item.notes))
-      .filter((weight) => weight !== null);
-    
+    const weightEntries = allEntries.filter((item) => item.activity === "Weight Check and sleep");
+    const weights = weightEntries.map((item) => extractWeight(item.notes)).filter(Boolean);
     return weights.length > 0 ? Math.max(...weights) : null;
   };
 
   useEffect(() => {
-    const userCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("currentUser="))
-      ?.split("=")[1];
-
+    const userCookie = document.cookie.split("; ").find((row) => row.startsWith("currentUser="))?.split("=")[1];
     if (!userCookie) {
       router.replace("/login");
       return;
@@ -204,11 +196,13 @@ export default function Home() {
 
     const verifyUser = async () => {
       try {
-        const res = await fetch(`/api/users/${userCookie}`);
+        const res = await fetch(`/api/users/${userCookie}`, { cache: 'no-store' });
         if (res.status === 401) throw new Error("Unauthorized");
-        
+        const data = await res.json();
         setCurrentUser(userCookie);
-        loadUserData(userCookie);
+        setUserAge(data.age);
+        setUserHeight(data.height);
+        loadUserData(userCookie, data.history);
       } catch (error) {
         document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         router.replace("/login");
@@ -220,33 +214,19 @@ export default function Home() {
     verifyUser();
   }, [router]);
 
-  const loadUserData = async (user) => {
-    try {
-      const res = await fetch(`/api/users/${user}`);
-      if (!res.ok) throw new Error("Failed to fetch data");
-      
-      const data = await res.json();
-      const safeHistory = Array.isArray(data?.history) ? data.history : [];
-      const todayDate = getLocalDateString();
-      const todayEntry = safeHistory.find((entry) =>
-        isSameEntryDate(entry.date, todayDate)
+  const loadUserData = (user, historyData) => {
+    const todayDate = getLocalDateString();
+    const todayEntry = historyData.find((entry) => isSameEntryDate(entry.date, todayDate));
+    const updatedEntries = entries.map((defaultItem) => {
+      const savedItem = todayEntry?.schedule?.find(
+        (s) => s.time === defaultItem.time && s.activity === defaultItem.activity
       );
+      return savedItem ? { ...defaultItem, ...savedItem } : defaultItem;
+    });
 
-      const updatedEntries = entries.map((defaultItem) => {
-        const savedItem = todayEntry?.schedule?.find(
-          (s) =>
-            s.time === defaultItem.time && s.activity === defaultItem.activity
-        );
-        return savedItem ? { ...defaultItem, ...savedItem } : defaultItem;
-      });
-
-      setEntries(updatedEntries);
-      setLatestWeight(getLatestWeight(updatedEntries, safeHistory));
-      setHistory(safeHistory.filter((entry) => !isSameEntryDate(entry.date, todayDate)));
-    } catch (error) {
-      console.error("Error loading data:", error);
-      throw error;
-    }
+    setEntries(updatedEntries);
+    setLatestWeight(getLatestWeight(updatedEntries, historyData));
+    setHistory(historyData.filter((entry) => !isSameEntryDate(entry.date, todayDate)));
   };
 
   const handleCheckboxChange = (index) => {
@@ -267,18 +247,14 @@ export default function Home() {
     setEntries(newEntries);
     setValidationError("");
   };
-
   const handleNotesChange = (index, value) => {
     const newEntries = [...entries];
     newEntries[index].notes = value;
-    
     if (newEntries[index].activity === "Weight Check and sleep") {
       setLatestWeight(extractWeight(value));
     }
-    
     setEntries(newEntries);
   };
-
   const handleSubmit = async () => {
     try {
       setSaveAttempted(true);
@@ -320,7 +296,6 @@ export default function Home() {
       setSaveAttempted(false);
     }
   };
-
   const logout = () => {
     document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     setCurrentUser("");
@@ -329,206 +304,126 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-primary-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-primary-500"></div>
       </div>
     );
   }
 
-  if (!currentUser) {
-    return null;
-  }
+  if (!currentUser) return null;
 
-  const sortedHistory = history.slice().sort((a, b) => {
-    const [dayA, monthA, yearA] = a.date.split("-").map(Number);
-    const [dayB, monthB, yearB] = b.date.split("-").map(Number);
-    const dateA = new Date(yearA, monthA - 1, dayA);
-    const dateB = new Date(yearB, monthB - 1, dayB);
-    return dateB - dateA;
-  });
+  const bmi = calculateBMI(latestWeight, userHeight);
 
   return (
-    <div className="min-h-screen pb-8">
-      <div className="sticky top-0 z-10 bg-gradient-to-b from-primary-700 to-primary-600 shadow-lg">
-        <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <span className="rounded-full bg-primary-100 px-3 py-1.5 text-sm font-medium text-primary-800">
-                {currentUser.slice(0, -4).toUpperCase()}
-              </span>
-              <h1 className="text-xl font-bold text-white">
-                {format(new Date(), "EEE, MMM d")}
-              </h1>
-              <div className="ml-4 flex items-center space-x-2">
-                <span className="text-white text-sm font-medium">Weight:</span>
-                <span className="bg-primary-800 text-white px-2 py-1 rounded-lg text-sm">
-                  {latestWeight ? `${latestWeight} kg` : "N/A"}
-                </span>
-              </div>
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-20 bg-gradient-to-r from-primary-700 to-primary-500 shadow-lg">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-extrabold tracking-tight">FitTrack Pro</h1>
+          <div className="flex items-center space-x-4">
+            <div className="text-sm">
+              <span className="block">Weight: {latestWeight ? `${latestWeight} kg` : "N/A"}</span>
+              <span className="block">BMI: {bmi || "N/A"}</span>
             </div>
-            <button
-              onClick={logout}
-              className="rounded-lg p-2 text-primary-100 hover:bg-primary-700"
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
+            <button onClick={logout} className="p-2 hover:bg-primary-600 rounded-full">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {validationError && (
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 mt-4">
-          <div className="p-3 bg-red-50 border-l-4 border-red-400 rounded-lg">
-            <p className="text-red-700 text-sm">{validationError}</p>
-          </div>
+      {/* Main Content */}
+      <main className="pt-20 pb-10 max-w-3xl mx-auto px-4">
+        {/* User Info */}
+        <div className="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg">
+          <h2 className="text-lg font-semibold">{currentUser.slice(0, -4).toUpperCase()}</h2>
+          <p className="text-sm text-gray-400">{format(new Date(), "EEEE, MMMM d")}</p>
         </div>
-      )}
 
-      <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
-        <div className="space-y-4">
+        {/* Schedule */}
+        <section className="space-y-4">
           {entries.map((item, index) => (
-            <div key={index} className="rounded-xl bg-white p-4 shadow-md">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() => handleCheckboxChange(index)}
-                    className="h-6 w-6 rounded-full border-2 border-primary-200 text-primary-600 focus:ring-primary-500"
-                  />
-                </div>
+            <div key={index} className="bg-gray-800 rounded-xl p-4 shadow-lg">
+              <div className="flex items-center gap-4">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => handleCheckboxChange(index)}
+                  className="h-5 w-5 rounded border-gray-600 text-primary-500 focus:ring-primary-500"
+                />
                 <div className="flex-1">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-lg font-semibold text-gray-900">
-                      {item.time}
-                    </span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-medium">{item.time}</span>
                     {item.timestamp && (
-                      <span className="text-sm text-primary-600">
+                      <span className="text-xs text-primary-400">
                         {format(new Date(item.timestamp), "hh:mm a")}
                       </span>
                     )}
                   </div>
-                  <h3 className="mt-1 text-base font-medium text-primary-800">
-                    {item.activity}
-                  </h3>
-                  <details className="mt-2">
-                    <summary className="text-sm text-gray-600 cursor-pointer hover:text-primary-600">
-                      View Details
-                    </summary>
-                    <div className="mt-2 space-y-2">
-                      <div className="prose prose-sm text-gray-600 whitespace-pre-line">
-                        {item.diet}
-                      </div>
-                      <textarea
-                        value={item.notes}
-                        onChange={(e) =>
-                          handleNotesChange(index, e.target.value)
-                        }
-                        className={`mt-2 w-full rounded-lg border p-2 text-sm focus:ring-primary-500 ${
-                          item.checked && !item.notes.trim()
-                            ? "border-red-300"
-                            : "border-gray-200"
-                        }`}
-                        placeholder={item.placeholder}
-                        rows={3}
-                        required
-                      />
-                    </div>
+                  <h3 className="text-base font-semibold text-primary-300">{item.activity}</h3>
+                  <details className="mt-2 text-sm text-gray-300">
+                    <summary className="cursor-pointer hover:text-primary-400">Details</summary>
+                    <p className="mt-2 whitespace-pre-line">{item.diet}</p>
+                    <textarea
+                      value={item.notes}
+                      onChange={(e) => handleNotesChange(index, e.target.value)}
+                      className="mt-2 w-full bg-gray-700 rounded-lg p-2 text-sm border border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder={item.placeholder}
+                      rows={2}
+                    />
                   </details>
                 </div>
               </div>
             </div>
           ))}
-        </div>
+        </section>
 
+        {/* Save Button */}
         <button
           onClick={handleSubmit}
           disabled={saveAttempted}
-          className="mt-8 w-full rounded-xl bg-primary-600 py-4 px-6 text-lg font-semibold text-white shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-6 w-full bg-primary-600 py-3 rounded-xl text-lg font-semibold hover:bg-primary-700 disabled:opacity-50"
         >
           {saveAttempted ? "Saving..." : "Save Progress"}
         </button>
 
-        <div className="mt-8 rounded-xl bg-white p-6 shadow-md">
-          <h3 className="text-xl font-bold text-primary-800 mb-4">
-            Daily Health Rules
-          </h3>
-          <div className="grid gap-4 md:grid-cols-2">
+        {/* Health Rules */}
+        <section className="mt-8 bg-gray-800 rounded-xl p-6 shadow-lg">
+          <h3 className="text-xl font-bold text-primary-300 mb-4">Daily Health Rules</h3>
+          <div className="grid gap-4">
             {healthProtocols.map((protocol, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <span className="shrink-0 text-2xl">{protocol.emoji}</span>
-                <p className="text-sm text-gray-700">{protocol.text}</p>
+              <div key={index} className="flex items-center gap-3">
+                <span className="text-2xl">{protocol.emoji}</span>
+                <p className="text-sm text-gray-300">{protocol.text}</p>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-bold text-primary-800 mb-4">History</h2>
+        {/* History */}
+        <section className="mt-8">
+          <h2 className="text-xl font-bold text-primary-300 mb-4">History</h2>
           <div className="space-y-3">
-            {sortedHistory.map((entry, index) => {
+            {history.map((entry, index) => {
               const [day, month, year] = entry.date.split("-");
               const isoDate = `${year}-${month}-${day}`;
-
               return (
-                <div key={index} className="rounded-lg bg-white p-4 shadow-sm">
-                  <details className="group">
-                    <summary className="flex justify-between items-center cursor-pointer">
-                      <span className="font-medium text-primary-800">
-                        {format(parseISO(isoDate), "MMMM do, yyyy")}
-                      </span>
-                      <span className="text-primary-600 transform transition-transform group-open:-rotate-180">
-                        ▼
-                      </span>
+                <div key={index} className="bg-gray-800 rounded-xl p-4 shadow-lg">
+                  <details>
+                    <summary className="flex justify-between items-center cursor-pointer text-primary-300">
+                      <span>{format(parseISO(isoDate), "MMMM do, yyyy")}</span>
+                      <span className="text-sm">▼</span>
                     </summary>
-                    <div className="mt-4 space-y-2">
-                      {entry.schedule?.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="flex flex-col gap-2 p-2 hover:bg-gray-50 rounded"
-                        >
-                          <div className="flex items-center gap-4">
-                            <span
-                              className={`h-4 w-4 rounded-full ${
-                                item.checked ? "bg-green-500" : "bg-gray-200"
-                              }`}
-                            />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">
-                                {item.time}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {item.activity}
-                              </p>
-                            </div>
-                            {item.checked && item.timestamp && (
-                              <span className="text-xs text-gray-500">
-                                {format(new Date(item.timestamp), "hh:mm a")}
-                              </span>
-                            )}
+                    <div className="mt-2 space-y-2 text-sm text-gray-300">
+                      {entry.schedule.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <span className={`h-3 w-3 rounded-full ${item.checked ? "bg-green-500" : "bg-gray-600"}`}></span>
+                          <div>
+                            <p>{item.time} - {item.activity}</p>
+                            {item.notes && <p className="text-gray-400">Notes: {item.notes}</p>}
                           </div>
-                          {item.checked && item.notes && (
-                            <div className="ml-8 p-2 bg-gray-50 rounded">
-                              <p className="text-sm text-gray-700 font-medium">
-                                Notes:
-                              </p>
-                              <p className="text-sm text-gray-600 whitespace-pre-line">
-                                {item.notes}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -537,18 +432,11 @@ export default function Home() {
               );
             })}
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
       {showSuccess && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-50 text-green-700 px-6 py-3 rounded-lg shadow-md flex items-center space-x-2 animate-slide-up">
-          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div className="fixed bottom-4 left-4 right-4 bg-green-600 text-white p-3 rounded-lg shadow-lg flex items-center justify-center">
           <span>Progress saved successfully!</span>
         </div>
       )}
