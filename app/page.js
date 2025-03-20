@@ -1,6 +1,6 @@
 // app/page.js
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
 
@@ -163,11 +163,27 @@ export default function Home() {
   const [latestWeight, setLatestWeight] = useState(null);
   const [userHeight, setUserHeight] = useState(0); // in cm
   const [userAge, setUserAge] = useState(0);
+  const detailsRefs = useRef([]); // To track <details> elements
 
   const calculateBMI = (weight, height) => {
     if (!weight || !height) return null;
     const heightInMeters = height / 100;
     return (weight / (heightInMeters * heightInMeters)).toFixed(1);
+  };
+
+  const getBMICategory = (bmi) => {
+    if (!bmi) return "N/A";
+    if (bmi < 18.5) return "Underweight";
+    if (bmi >= 18.5 && bmi <= 24.9) return "Healthy weight";
+    if (bmi >= 25 && bmi <= 29.9) return "Overweight";
+    return "Obese";
+  };
+
+  const calculateTargetWeight = (height) => {
+    if (!height) return null;
+    const heightInMeters = height / 100;
+    const targetBMI = 24; // Middle of healthy range (18.5–24.9)
+    return (targetBMI * (heightInMeters * heightInMeters)).toFixed(1);
   };
 
   const extractWeight = (notes) => {
@@ -193,13 +209,13 @@ export default function Home() {
     try {
       const res = await fetch(blobUrl, { cache: 'no-store' });
       if (!res.ok) {
-        if (res.status === 404) return { age: 0, height: 0, history: [] }; // New user case
+        if (res.status === 404) return { age: 0, height: 0, history: [] };
         throw new Error("Failed to fetch data");
       }
       return await res.json();
     } catch (error) {
       console.error("Fetch error:", error);
-      return { age: 0, height: 0, history: [] }; // Fallback for errors
+      return { age: 0, height: 0, history: [] };
     }
   };
 
@@ -288,7 +304,6 @@ export default function Home() {
         })),
       };
 
-      // Save via API route
       const saveResponse = await fetch(`/api/users/${currentUser}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -300,14 +315,17 @@ export default function Home() {
         throw new Error(errorData.error || "Save failed");
       }
 
-      // Immediately fetch the latest data from Blob URL
+      // Fetch latest data
       const updatedData = await fetchUserData(currentUser);
-      
-      // Update local state with fresh data
       loadUserData(currentUser, updatedData.history || []);
       setUserAge(updatedData.age || 0);
       setUserHeight(updatedData.height || 0);
       setLatestWeight(getLatestWeight(entries, updatedData.history || []));
+
+      // Collapse all <details> elements
+      detailsRefs.current.forEach((ref) => {
+        if (ref) ref.open = false;
+      });
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -315,7 +333,7 @@ export default function Home() {
       console.error("Submission error:", error);
       alert(`Save failed: ${error.message}`);
     } finally {
-      setSaveAttempted(false); // Ensure button resets even on error
+      setSaveAttempted(false);
     }
   };
 
@@ -336,6 +354,9 @@ export default function Home() {
   if (!currentUser) return null;
 
   const bmi = calculateBMI(latestWeight, userHeight);
+  const bmiCategory = getBMICategory(bmi);
+  const targetWeight = calculateTargetWeight(userHeight);
+  const username = currentUser.slice(0, -4).toUpperCase();
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -345,7 +366,14 @@ export default function Home() {
           <div className="flex items-center space-x-4">
             <div className="text-sm">
               <span className="block">Weight: {latestWeight ? `${latestWeight} kg` : "N/A"}</span>
-              <span className="block">BMI: {bmi || "N/A"}</span>
+              <span className="block">
+                BMI: {bmi || "N/A"} ({bmiCategory})
+                {targetWeight && (
+                  <span className="ml-1 text-xs text-gray-300">
+                    Target: {targetWeight} kg
+                  </span>
+                )}
+              </span>
             </div>
             <button onClick={logout} className="p-2 hover:bg-primary-600 rounded-full">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -358,7 +386,7 @@ export default function Home() {
 
       <main className="pt-20 pb-10 max-w-3xl mx-auto px-4">
         <div className="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg">
-          <h2 className="text-lg font-semibold">{currentUser.slice(0, -4).toUpperCase()}</h2>
+          <h2 className="text-lg font-semibold">Let's do it, {username}</h2>
           <p className="text-sm text-gray-400">{format(new Date(), "EEEE, MMMM d")}</p>
         </div>
 
@@ -382,7 +410,10 @@ export default function Home() {
                     )}
                   </div>
                   <h3 className="text-base font-semibold text-primary-300">{item.activity}</h3>
-                  <details className="mt-2 text-sm text-gray-300">
+                  <details
+                    ref={(el) => (detailsRefs.current[index] = el)}
+                    className="mt-2 text-sm text-gray-300"
+                  >
                     <summary className="cursor-pointer hover:text-primary-400">Details</summary>
                     <p className="mt-2 whitespace-pre-line">{item.diet}</p>
                     <textarea
