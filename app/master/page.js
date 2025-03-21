@@ -37,7 +37,7 @@ export default function MasterHome() {
           if (res.ok) {
             fetchedData[user] = await res.json();
           } else {
-            fetchedData[user] = { age: 0, height: 0, history: [] }; // Default for users with no data
+            fetchedData[user] = { age: 0, height: 0, history: [] };
           }
         }
         setAllUsersData(fetchedData);
@@ -82,45 +82,48 @@ export default function MasterHome() {
         {error && <p className="text-red-600 text-center">{error}</p>}
 
         <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-          {Object.entries(allUsersData).map(([username, data]) => (
-            <details key={username} className="bg-gray-50 rounded-lg p-4 shadow-sm">
-              <summary className="cursor-pointer text-lg font-semibold text-primary-700 hover:text-primary-900">
-                {username.toUpperCase()} (Age: {data.age}, Height: {data.height} cm)
-              </summary>
-              <div className="mt-2 space-y-3 text-sm text-gray-700">
-                {data.history.length === 0 ? (
-                  <p>No history available for this user.</p>
-                ) : (
-                  data.history.map((entry, index) => {
-                    const [day, month, year] = entry.date.split('-');
-                    const isoDate = `${year}-${month}-${day}`;
-                    return (
-                      <div key={index} className="border-t pt-2">
-                        <h3 className="font-medium text-primary-600">
-                          {format(parseISO(isoDate), 'MMMM do, yyyy')}
-                        </h3>
-                        <ul className="mt-1 space-y-1">
-                          {entry.schedule.map((item, idx) => (
-                            <li key={idx} className="flex items-center gap-2">
-                              <span
-                                className={`h-2 w-2 rounded-full ${
-                                  item.checked ? 'bg-green-500' : 'bg-gray-400'
-                                }`}
-                              ></span>
-                              <span>
-                                {item.time} - {item.activity}{' '}
-                                {item.notes && <span className="text-gray-500">({item.notes})</span>}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </details>
-          ))}
+          {Object.entries(allUsersData).map(([username, data]) => {
+            const displayUsername = username.slice(0, -4).toUpperCase(); // Remove last 4 characters and uppercase
+            return (
+              <details key={username} className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                <summary className="cursor-pointer text-lg font-semibold text-primary-700 hover:text-primary-900">
+                  {displayUsername} (Age: {data.age}, Height: {data.height} cm)
+                </summary>
+                <div className="mt-2 space-y-3 text-sm text-gray-700">
+                  {data.history.length === 0 ? (
+                    <p>No history available for this user.</p>
+                  ) : (
+                    data.history.map((entry, index) => {
+                      const [day, month, year] = entry.date.split('-');
+                      const isoDate = `${year}-${month}-${day}`;
+                      return (
+                        <div key={index} className="border-t pt-2">
+                          <h3 className="font-medium text-primary-600">
+                            {format(parseISO(isoDate), 'MMMM do, yyyy')}
+                          </h3>
+                          <ul className="mt-1 space-y-1">
+                            {entry.schedule.map((item, idx) => (
+                              <li key={idx} className="flex items-center gap-2">
+                                <span
+                                  className={`h-2 w-2 rounded-full ${
+                                    item.checked ? 'bg-green-500' : 'bg-gray-400'
+                                  }`}
+                                ></span>
+                                <span>
+                                  {item.time} - {item.activity}{' '}
+                                  {item.notes && <span className="text-gray-500">({item.notes})</span>}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </details>
+            );
+          })}
         </div>
       </div>
     </div>
