@@ -5,17 +5,18 @@ import { useRouter } from 'next/navigation';
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [masterUsername, setMasterUsername] = useState('');
+  const [masterPassword, setMasterPassword] = useState('');
   const [error, setError] = useState('');
+  const [masterError, setMasterError] = useState('');
   const router = useRouter();
-  const validUsers = ['aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33', 'tirumala1234',  "Chinni4823",
-    "Laddu9372",
-    "Amruth2645",
-    "Pandu7189",
-    "Sweety5031",
-    "Sindhu8457",
-    "Ravinder1294",
-    "Swaroopa1234",
-    "Thirumala3768" ];
+
+  const validUsers = [
+    'aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33', 'tirumala1234', 'Chinni4823',
+    'Laddu9372', 'Amruth2645', 'Pandu7189', 'Sweety5031', 'Sindhu8457',
+    'Ravinder1294', 'Swaroopa1234', 'Thirumala3768'
+  ];
+  const masterUsers = ['aaaaa11', 'Thirumala3768', 'Sindhu8457'];
 
   useEffect(() => {
     const userCookie = document.cookie
@@ -33,6 +34,18 @@ export default function Login() {
       window.location.href = '/';
     } else {
       setError('Invalid username or password');
+    }
+  };
+
+  const handleMasterSubmit = (e) => {
+    e.preventDefault();
+    const masterUserCode = masterUsername + masterPassword;
+
+    if (masterUsers.includes(masterUserCode)) {
+      document.cookie = `currentUser=${masterUserCode}; path=/; max-age=86400; SameSite=Lax`;
+      window.location.href = '/master';
+    } else {
+      setMasterError('Invalid master credentials');
     }
   };
 
@@ -98,6 +111,51 @@ export default function Login() {
             Sign In
           </button>
         </form>
+
+        <details className="mt-4 text-sm text-gray-700">
+          <summary className="cursor-pointer hover:text-primary-600 font-medium">
+            Master Login
+          </summary>
+          <form className="mt-4 space-y-6" onSubmit={handleMasterSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Master Username
+                </label>
+                <input
+                  type="text"
+                  value={masterUsername}
+                  onChange={(e) => setMasterUsername(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
+                  placeholder="Enter master username"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Master Password
+                </label>
+                <input
+                  type="password"
+                  value={masterPassword}
+                  onChange={(e) => setMasterPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
+                  placeholder="Enter master password"
+                  required
+                />
+              </div>
+              {masterError && (
+                <p className="text-sm text-red-600 text-center">{masterError}</p>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="w-full flex justify-center items-center py-3 px-4 bg-primary-800 hover:bg-primary-900 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              Master Sign In
+            </button>
+          </form>
+        </details>
       </div>
     </div>
   );
