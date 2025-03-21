@@ -24,7 +24,7 @@ export default function MasterHome() {
       const fetchedData = {};
 
       try {
-        for (const user of validUsers) {
+        if (1) {
           const blobUrl = `https://jjat2xf6azudepf3.public.blob.vercel-storage.com/users/${user}.json?t=${timestamp}`;
           const res = await fetch(blobUrl, { cache: 'no-store' });
           if (res.ok) {
