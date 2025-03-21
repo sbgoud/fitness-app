@@ -11,7 +11,7 @@ export default function MasterHome() {
 
   const masterUsers = ['aaaaa11', 'Thirumala3768', 'Sindhu8457'];
   const validUsers = [
-    'aaaaa11', 'bbbbb22', 'ccccc33', 'ddddd33', 'tirumala1234', 'Chinni4823',
+    'aaaaa11', 'Chinni4823',
     'Laddu9372', 'Amruth2645', 'Pandu7189', 'Sweety5031', 'Sindhu8457',
     'Ravinder1294', 'Swaroopa1234', 'Thirumala3768'
   ];
