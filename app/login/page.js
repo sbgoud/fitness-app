@@ -73,7 +73,37 @@ export default function Login() {
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
+                placeholder="Enter username"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            )}
+          </div>
           <button
             type="submit"
             className="w-full flex justify-center items-center py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
@@ -87,37 +117,7 @@ export default function Login() {
             Master Login
           </summary>
           <form className="mt-4 space-y-6" onSubmit={handleMasterSubmit}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Master Username
-                </label>
-                <input
-                  type="text"
-                  value={masterUsername}
-                  onChange={(e) => setMasterUsername(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
-                  placeholder="Enter master username"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Master Password
-                </label>
-                <input
-                  type="password"
-                  value={masterPassword}
-                  onChange={(e) => setMasterPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
-                  placeholder="Enter master password"
-                  required
-                />
-              </div>
-              {masterError && (
-                <p className="text-sm text-red-600 text-center">{masterError}</p>
-              )}
-            </div>
+            
             <button
               type="submit"
               className="w-full flex justify-center items-center py-3 px-4 bg-primary-800 hover:bg-primary-900 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
