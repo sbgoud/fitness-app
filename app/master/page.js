@@ -43,7 +43,7 @@ export default function MasterHome() {
     };
 
     fetchAllUsersData();
-  }, [router]);
+  }, []);
 
   const logout = () => {
     document.cookie = "currentUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
