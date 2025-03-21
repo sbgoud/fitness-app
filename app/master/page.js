@@ -9,7 +9,7 @@ export default function MasterHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const masterUsers = ['aaaaa11', 'Thirumala3768', 'Sindhu8457'];
+  
   const validUsers = [
     'aaaaa11', 'Chinni4823',
     'Laddu9372', 'Amruth2645', 'Pandu7189', 'Sweety5031', 'Sindhu8457',
@@ -17,15 +17,8 @@ export default function MasterHome() {
   ];
 
   useEffect(() => {
-    const userCookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('currentUser='))
-      ?.split('=')[1];
-    if (!userCookie || !masterUsers.includes(userCookie)) {
-      router.replace('/login');
-      return;
-    }
-
+   
+   
     const fetchAllUsersData = async () => {
       const timestamp = Date.now();
       const fetchedData = {};

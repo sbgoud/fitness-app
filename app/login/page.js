@@ -5,10 +5,9 @@ import { useRouter } from 'next/navigation';
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [masterUsername, setMasterUsername] = useState('');
-  const [masterPassword, setMasterPassword] = useState('');
+
   const [error, setError] = useState('');
-  const [masterError, setMasterError] = useState('');
+
   const router = useRouter();
 
   const validUsers = [
@@ -16,7 +15,7 @@ export default function Login() {
     'Laddu9372', 'Amruth2645', 'Pandu7189', 'Sweety5031', 'Sindhu8457',
     'Ravinder1294', 'Swaroopa1234', 'Thirumala3768'
   ];
-  const masterUsers = ['aaaaa11', 'Thirumala3768', 'Sindhu8457'];
+  
 
   useEffect(() => {
     const userCookie = document.cookie
