@@ -39,14 +39,8 @@ export default function Login() {
 
   const handleMasterSubmit = (e) => {
     e.preventDefault();
-    const masterUserCode = masterUsername + masterPassword;
-
-    if (1) {
-      document.cookie = `currentUser=${masterUserCode}; path=/; max-age=86400; SameSite=Lax`;
       window.location.href = '/master';
-    } else {
-      setMasterError('Invalid master credentials');
-    }
+    
   };
 
   return (
